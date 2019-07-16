@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/binary"
-	"errors"
 	"io"
 	"strings"
 	"time"
@@ -29,12 +28,12 @@ func newToken(params Token, secretKey []byte) *Token {
 	}
 	now := time.Now()
 	t := &Token{
-		UserID:    params.UserID,
-		Device:    params.Device,
-		Remark:    params.Remark,
-		IssuedAt:  now,
-		ExpiredAt: now.Add(DefaultTokenLife),
+		UserID: params.UserID,
+		Device: params.Device,
+		Remark: params.Remark,
 	}
+	t.IssuedAt = now
+	t.ExpiredAt = now.Add(DefaultTokenLife)
 	// 生成12位随机数
 	// bcrypt调试到最低1ms左右
 	// 因为是按照字节随机的无规律，充分利用每字节128种可见字符可能性，无法做生日攻击
@@ -57,7 +56,7 @@ func parseTokenString(tokenString string, secretKey []byte) (t *Token, err error
 	tokenString += strings.Repeat("=", (4-len(tokenString)%4)%4)
 	data, err := base64.URLEncoding.DecodeString(tokenString)
 	if err != nil {
-		return nil, errors.New("Invalid remember-token")
+		return nil, ErrInvalidToken
 	}
 
 	// 解密
@@ -70,7 +69,7 @@ func parseTokenString(tokenString string, secretKey []byte) (t *Token, err error
 	ID := uint64(binary.BigEndian.Uint64(plaintext[:8]))
 	nonce := plaintext[8 : 8+12]
 	if ID == 0 {
-		return nil, errors.New("Invalid remember-token")
+		return nil, ErrInvalidToken
 	}
 
 	// 剩下的更多内容需要去数据库获取
@@ -84,10 +83,10 @@ func parseTokenString(tokenString string, secretKey []byte) (t *Token, err error
 // Token 登录后的token （一个用户可以由多个token）
 type Token struct {
 	ID        uint64
-	UserID    uint64 ``
-	Device    string `` // 比如“home”“office”，有前端程序定义
-	Remark    string `` // 比如“家”、“办公室”，用户定义
-	Hash      string `` //
+	UserID    uint64
+	Device    string // 比如“home”“office”，有前端程序定义
+	Remark    string // 比如“家”、“办公室”，用户定义
+	Hash      string //
 	IssuedAt  time.Time
 	ExpiredAt time.Time
 	DeletedAt *time.Time

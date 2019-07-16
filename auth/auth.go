@@ -1,6 +1,9 @@
 package auth
 
-import "github.com/jinzhu/gorm"
+import (
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres" // postgres
+)
 
 // New 返回Auth类
 func New(config Config) *Auth {
@@ -22,7 +25,14 @@ type Auth struct {
 	gormDB    *gorm.DB
 }
 
+func (auth *Auth) db() *gorm.DB {
+	if auth.gormDB == nil {
+		panic("Auth 缺少有效的*gorm.DB对象")
+	}
+	return auth.gormDB
+}
+
 // NewRepository 返回 Repository
-func (a *Auth) NewRepository() *Repository {
-	return newRepository(a.gormDB)
+func (auth *Auth) NewRepository() *Repository {
+	return newRepository(auth)
 }
