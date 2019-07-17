@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"net/http"
+
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres" // postgres
 )
@@ -35,4 +37,9 @@ func (auth *Auth) db() *gorm.DB {
 // NewRepository 返回 Repository
 func (auth *Auth) NewRepository() *Repository {
 	return newRepository(auth)
+}
+
+// NewContext 返回 ContextRepository
+func (auth *Auth) NewContext(req *http.Request) *ContextRepository {
+	return newContextRepository(req)
 }
