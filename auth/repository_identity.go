@@ -2,6 +2,7 @@ package auth
 
 import (
 	"encoding/json"
+	"errors"
 )
 
 // UserIndentity 操作类...
@@ -28,10 +29,18 @@ func (r *Repository) FindIdentityByUser(userID uint64, provider string) (indenti
 
 // CreateIdentity 创建UserIdentity
 func (r *Repository) CreateIdentity(userID uint64, provider, openID string, data ...interface{}) (indentity *UserIdentity, err error) {
+	if userID == 0 {
+		return nil, errors.New("userID不能为0")
+	}
 	indentity = &UserIdentity{
 		UserID:   userID,
 		Provider: provider,
 		OpenID:   openID,
+	}
+	if len(data) == 1 {
+		bytes, _ := json.Marshal(data[0])
+		jsonData := json.RawMessage(bytes)
+		indentity.Data = &jsonData
 	}
 	err = r.db().Create(indentity).Error
 	if err != nil {

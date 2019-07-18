@@ -22,5 +22,5 @@ func init() {
 
 	secretKey := []byte("aasdfkjksjdfaaasdfkjksjdfa123405") // 32 bytes
 	auth = New(Config{DB: db, SecretKey: secretKey})
-	repository = auth.NewRepository()
+	repository = auth.Repository
 }

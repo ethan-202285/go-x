@@ -12,7 +12,7 @@ func TestToken(t *testing.T) {
 	token.ID = 1234567899 // 模拟保存数据库
 
 	// 发送给客户端，由客户端保存，tokenString内含不可复原的nonce
-	tokenString := token.Stringify()
+	tokenString := token.TokenString()
 	log.Println(tokenString)
 
 	// 验证

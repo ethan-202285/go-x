@@ -14,17 +14,17 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// DefaultTokenLife 默认token有效期
-var DefaultTokenLife = 365 * 24 * time.Hour // 1 Year
+// DefaultRefreshTokenLife 默认token有效时长
+var DefaultRefreshTokenLife = 365 * 24 * time.Hour // 1 Year
 
 // Usage:
 // token := newToken(Token{UserID:13, Device:"web", Remark:"浏览器"}, KEY)
 func newToken(params Token, secretKey []byte) *Token {
 	if params.UserID == 0 {
-		panic("UserID未设置")
+		panic("params.UserID未设置")
 	}
 	if len(params.Device) == 0 {
-		panic("Device未设置")
+		panic("params.Device未设置")
 	}
 	now := time.Now()
 	t := &Token{
@@ -33,7 +33,7 @@ func newToken(params Token, secretKey []byte) *Token {
 		Remark: params.Remark,
 	}
 	t.IssuedAt = now
-	t.ExpiredAt = now.Add(DefaultTokenLife)
+	t.ExpiredAt = now.Add(DefaultRefreshTokenLife)
 	// 生成12位随机数
 	// bcrypt调试到最低1ms左右
 	// 因为是按照字节随机的无规律，充分利用每字节128种可见字符可能性，无法做生日攻击
@@ -110,10 +110,10 @@ func (t *Token) ExpiresAfter(duration time.Duration) *Token {
 // 由newToken()自动调用
 func (t *Token) sign() string {
 	if len(t.nonce) == 0 {
-		panic("只有newToken()创建的对象，才能导出Signature")
+		panic("缺少Token.nonce，只有newToken()创建的对象，才能导出Signature")
 	}
 	if len(t.secretKey) == 0 {
-		panic("只有newToken()创建的对象，才能导出Signature")
+		panic("缺少Token.secretKey，只有newToken()创建的对象，才能导出Signature")
 	}
 
 	// 打包
@@ -150,7 +150,7 @@ func (t *Token) sign() string {
 // Verify 验证
 func (t *Token) Verify() bool {
 	if len(t.Hash) == 0 {
-		panic("请查询数据库获取Hash，再Verify()")
+		panic("缺少Token.Hash，请查询数据库获取Hash，再Verify()")
 	}
 
 	// 打包
@@ -162,16 +162,16 @@ func (t *Token) Verify() bool {
 	return err == nil
 }
 
-// Stringify AES加密后，导出Base64格式
-func (t *Token) Stringify() string {
+// TokenString 导出AES加密Base64编码后的ID+nonce字符串
+func (t *Token) TokenString() string {
 	if t.ID == 0 {
-		panic("必须保存到数据库，才能导出String")
+		panic("缺少Token.ID，必须保存到数据库，才能导出String")
 	}
 	if len(t.nonce) == 0 {
-		panic("只有newToken()创建的对象，才能导出String")
+		panic("缺少Token.nonce，只有newToken()创建的对象，才能导出String")
 	}
 	if len(t.secretKey) == 0 {
-		panic("只有newToken()创建的对象，才能导出String")
+		panic("缺少Token.secretKey，只有newToken()创建的对象，才能导出String")
 	}
 
 	// 打包

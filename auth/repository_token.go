@@ -51,7 +51,7 @@ func (r *Repository) CreateToken(
 		return nil, "", err
 	}
 
-	return token, token.Stringify(), nil
+	return token, token.TokenString(), nil
 }
 
 // DeleteToken 删除Token
