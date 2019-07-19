@@ -41,6 +41,10 @@ func (s *NaCL) Encrypt(plaintext []byte) []byte {
 
 // Decrypt 解密
 func (s *NaCL) Decrypt(encrypted []byte) (plaintext []byte, err error) {
+	if len(encrypted) <= 24 {
+		return nil, fmt.Errorf("invalid ciphertext size (<=24)")
+	}
+
 	// When you decrypt, you must use the same nonce and key you used to
 	// encrypt the message. One way to achieve this is to store the nonce
 	// alongside the encrypted message. Above, we stored the nonce in the first

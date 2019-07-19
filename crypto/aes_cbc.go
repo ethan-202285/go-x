@@ -45,6 +45,9 @@ func (a *CBC) Decrypt(ciphertext []byte) (plaintext []byte, err error) {
 	if len(ciphertext)%aes.BlockSize != 0 {
 		return nil, fmt.Errorf("ciphertext is not a multiple of the block size")
 	}
+	if len(ciphertext) <= aes.BlockSize {
+		return nil, fmt.Errorf("invalid ciphertext size (<=%d)", aes.BlockSize)
+	}
 
 	block, err := aes.NewCipher(a.secretKey)
 	if err != nil {

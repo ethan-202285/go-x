@@ -4,6 +4,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"fmt"
 	"io"
 )
 
@@ -45,6 +46,10 @@ func (a *GCM) Encrypt(plaintext []byte) []byte {
 
 // Decrypt 解密
 func (a *GCM) Decrypt(encrypted []byte) (plaintext []byte, err error) {
+	if len(encrypted) <= gcmStandardNonceSize {
+		return nil, fmt.Errorf("error ciphertext size (<=%d)", gcmStandardNonceSize)
+	}
+
 	var nonce []byte
 	nonce = encrypted[:gcmStandardNonceSize]
 
