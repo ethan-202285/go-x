@@ -16,16 +16,17 @@ type ContextRepository struct {
 
 // UserID 在context里获取UserID
 func (r *ContextRepository) UserID() uint64 {
-	userID, ok := r.request.Context().Value(contextKeyUserID).(uint64)
-	if !ok {
+	user := r.User()
+	if user == nil {
 		return 0
 	}
-	return userID
+	return user.ID
 }
 
 // User 在context里获取User
 func (r *ContextRepository) User() *User {
-	user, ok := r.request.Context().Value(contextKeyUser).(*User)
+	value := r.request.Context().Value(contextKeyUser)
+	user, ok := value.(*User)
 	if !ok {
 		return nil
 	}
@@ -34,9 +35,14 @@ func (r *ContextRepository) User() *User {
 
 // WithUserID 在context里带上UserID
 func (r *ContextRepository) WithUserID(userID uint64) *ContextRepository {
-	ctx := r.request.Context()
-	ctx = context.WithValue(ctx, contextKeyUserID, userID)
-	r.request = r.request.WithContext(ctx)
+	// 检查是否已经有User
+	user := r.User()
+	if user == nil || user.ID != userID {
+		user := &User{ID: userID}
+		ctx := r.request.Context()
+		ctx = context.WithValue(ctx, contextKeyUser, user)
+		r.request = r.request.WithContext(ctx)
+	}
 	return r
 }
 
@@ -54,8 +60,7 @@ func (r *ContextRepository) Request() *http.Request {
 }
 
 var (
-	contextKeyUser   = &contextKey{"user"}
-	contextKeyUserID = &contextKey{"user_id"}
+	contextKeyUser = &contextKey{"user"}
 )
 
 // contextKey is a value for use with context.WithValue. It's used as

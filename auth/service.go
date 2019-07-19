@@ -110,17 +110,17 @@ func (s *Service) Login(
 }
 
 // Renew 通过RefreshToken续约
-func (s *Service) Renew(tokenString string) (tokens *TokenResponse, err error) {
+func (s *Service) Renew(tokenString string) (user *User, tokens *TokenResponse, err error) {
 	// 验证
-	user, err := s.repository().FindByToken(tokenString)
+	user, err = s.repository().FindByToken(tokenString)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	// 发放jwttoken
 	tokens = &TokenResponse{}
 	tokens.Token, tokens.TokenExpires, err = s.issueJWTToken(user)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	return
 }

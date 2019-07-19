@@ -2,7 +2,6 @@ package auth
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -17,9 +16,9 @@ func init() {
 	dsn := fmt.Sprintf("host=db port=5432 user=app dbname=app password=app sslmode=disable")
 	db, err := gorm.Open("postgres", dsn)
 	if err != nil {
-		log.Fatal("openDB: ", err)
+		panic(err)
 	}
-	db.LogMode(true)
+	//db.LogMode(true)
 
 	// 缩短时间，方便测试
 	cleanupInterval = 50 * time.Millisecond

@@ -52,7 +52,7 @@ func TestLogin(t *testing.T) {
 	}
 
 	// Renew
-	tokens, err = auth.Service.Renew(*tokens.RefreshToken)
+	_, tokens, err = auth.Service.Renew(*tokens.RefreshToken)
 	if err != nil {
 		t.Fatal(err)
 	}

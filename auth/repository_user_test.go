@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"log"
 	"testing"
 )
 
@@ -27,7 +26,7 @@ func TestUserCreate(t *testing.T) {
 	// 重复创建
 	user, err = repository.Create("goodwong", "老小王")
 	if err == nil {
-		log.Printf("错误的保存user: % v\n", user)
+		t.Logf("错误的保存user: % v\n", user)
 		t.Fatal("重复用户名理应报错，却没有报")
 	}
 	// 第三个参数
@@ -71,14 +70,14 @@ func TestUserFind(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	log.Printf("Find: % v\n", user)
+	t.Logf("Find: % v\n", user)
 
 	// 按username
 	user, err = repository.FindByUsername("goodwong")
 	if err != nil {
 		t.Fatal(err)
 	}
-	log.Printf("FindByUsername: % v\n", user)
+	t.Logf("FindByUsername: % v\n", user)
 }
 
 func TestUserList(t *testing.T) {
@@ -88,11 +87,11 @@ func TestUserList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	log.Printf("List() %d 人:\n", len(users))
+	t.Logf("List() %d 人:\n", len(users))
 
 	count, err := repository.Count("id < ?", 10)
 	if err != nil {
 		t.Fatal(err)
 	}
-	log.Printf("Count() %d 人:\n", count)
+	t.Logf("Count() %d 人:\n", count)
 }

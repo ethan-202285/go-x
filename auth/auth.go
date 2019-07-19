@@ -17,6 +17,8 @@ func New(config Config) *Auth {
 	}
 	auth.Repository = newRepository(auth)
 	auth.Service = newService(auth)
+	auth.Handler = newHandler(auth)
+	auth.Middleware = newMiddleware(auth)
 	return auth
 }
 
@@ -30,6 +32,8 @@ type Config struct {
 type Auth struct {
 	Repository *Repository
 	Service    *Service
+	Handler    *Handler
+	Middleware *Middleware
 
 	secretKey []byte
 	gormDB    *gorm.DB
