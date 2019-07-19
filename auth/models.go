@@ -23,19 +23,6 @@ type UserIdentity struct {
 	Data     *json.RawMessage ``                   // json原始数据（密码也可以放这里）
 }
 
-// UserLogout 主动注销行为（数据量较小，可内存保存）
-type UserLogout struct {
-	UserID       uint64
-	LocationCode string
-	LogoutAt     time.Time //（只要是userID在这里的，并且user.iat < LogoutAt的，都要重新登录）
-}
-
-// TableName 按照gorm方式制定数据库表名
-// ** 这里需要阻止建表
-func (u *UserLogout) TableName() string {
-	panic("UserLogout是内存表，无需创建数据库")
-}
-
 // UserLog 用户行为记录（登录、注销）
 type UserLog struct {
 	ID        uint64

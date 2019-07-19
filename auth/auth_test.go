@@ -3,6 +3,7 @@ package auth
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/jinzhu/gorm"
 )
@@ -19,6 +20,10 @@ func init() {
 		log.Fatal("openDB: ", err)
 	}
 	db.LogMode(true)
+
+	// 缩短时间，方便测试
+	cleanupInterval = 50 * time.Millisecond
+	DefaultTokenLife = 50 * time.Millisecond
 
 	secretKey := []byte("aasdfkjksjdfaaasdfkjksjdfa123405") // 32 bytes
 	auth = New(Config{DB: db, SecretKey: secretKey})

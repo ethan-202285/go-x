@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -9,9 +10,12 @@ import (
 
 // DefaultTokenLife 默认JWT token有效时长
 var DefaultTokenLife = 1 * time.Hour // 1 Hour
+var cleanupInterval = 10 * time.Second
 
 func newService(auth *Auth) *Service {
-	return &Service{auth: auth, providers: map[string]LoginProvider{}}
+	service := &Service{auth: auth, providers: map[string]LoginProvider{}}
+	service.cleanupLogoutsLoop()
+	return service
 }
 
 // LoginProvider 登陆方法
@@ -24,6 +28,7 @@ type LoginProvider interface {
 type Service struct {
 	auth      *Auth
 	providers map[string]LoginProvider
+	logouts   sync.Map
 }
 
 func (s *Service) repository() *Repository {
@@ -121,10 +126,30 @@ func (s *Service) Renew(tokenString string) (tokens *TokenResponse, err error) {
 }
 
 // Logout 登出
-// todo 需要加入 Logouts 名单
 // todo middleware 检查这个Logouts名单
 func (s *Service) Logout(user *User, device string) (err error) {
+	logout := logoutStruct{UserID: user.ID, LogoutAt: time.Now()}
+	s.logouts.Store(user.ID, &logout)
 	return s.repository().DeleteToken(user.ID, device)
+}
+
+// Validate 检查是否jwt是否提前失效（指用户主动登出）
+func (s *Service) Validate(token *jwt.Token) bool {
+	claims := token.Claims.(jwt.MapClaims)
+	userID := uint64(claims["sub"].(float64))
+	issuedAt := int64(claims["iat"].(float64))
+
+	// 查询
+	v, ok := s.logouts.Load(userID)
+	if !ok {
+		return false
+	}
+	// 比较
+	logout := v.(*logoutStruct)
+	if issuedAt <= logout.LogoutAt.UTC().Unix() {
+		return true
+	}
+	return false
 }
 
 // RegisterProvider 注册登陆方式
@@ -132,4 +157,32 @@ func (s *Service) RegisterProvider(provider LoginProvider) {
 	name := provider.Name()
 	s.providers[name] = provider
 	return
+}
+
+// logoutStruct 主动注销行为（数据量较小，可内存保存）
+//（只要是userID在这里的，并且user.iat < LogoutAt的，都要重新登录）
+type logoutStruct struct {
+	UserID   uint64
+	LogoutAt time.Time
+}
+
+// 自动清理logouts条目
+// todo 集成CanceledContext，感知cancel时间
+func (s *Service) cleanupLogoutsLoop() {
+	go func() {
+		for {
+			now := time.Now()
+			s.logouts.Range(func(k, v interface{}) bool {
+				logout := v.(*logoutStruct)
+				if logout.LogoutAt.Add(DefaultTokenLife).Before(now) {
+					s.logouts.Delete(k)
+				}
+
+				return true
+			})
+
+			// 间隔
+			time.Sleep(cleanupInterval)
+		}
+	}()
 }

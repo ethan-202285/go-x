@@ -2,6 +2,7 @@ package auth
 
 import (
 	"testing"
+	"time"
 )
 
 var (
@@ -16,6 +17,7 @@ func init() {
 	// 准备数据
 	auth.db().Delete(&User{}, "username IN (?)", []string{"testpassword"})
 	auth.db().Delete(&UserIdentity{}, "open_id IN (?)", []string{"testpassword"})
+	auth.db().Unscoped().Delete(&Token{}, "device IN (?)", []string{"test", "gotest"})
 	username, password := "testpassword", "testpassword"
 	var err error
 	loginUser, err = passwordProvider.Register(username, password)
@@ -63,4 +65,41 @@ func TestLogin(t *testing.T) {
 	}
 
 	// Logout
+	jwtToken, err := auth.jwtauth.Decode(tokens.Token)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if needRelogin := auth.Service.Validate(jwtToken); needRelogin {
+		t.Fatal("不需要重新登录")
+	}
+	if err := auth.Service.Logout(loginUser, "gotest"); err != nil {
+		t.Fatal(err)
+	}
+	if needRelogin := auth.Service.Validate(jwtToken); !needRelogin {
+		t.Fatal("理应需要重新登录")
+	}
+}
+
+func TestClearLogoutsLoop(t *testing.T) {
+	count := 0
+
+	// 第一次测量
+	auth.Service.logouts.Range(func(k, v interface{}) bool {
+		count++
+		return true
+	})
+	if count != 1 {
+		t.Fatalf("logouts条目应该是1条，测试的数据%d条，不对\n", count)
+	}
+
+	// 清理后的测量
+	time.Sleep(2 * cleanupInterval)
+	count = 0
+	auth.Service.logouts.Range(func(k, v interface{}) bool {
+		count++
+		return true
+	})
+	if count != 0 {
+		t.Fatalf("清理后的logouts条目应该是0条，测试的数据%d条，不对\n", count)
+	}
 }
