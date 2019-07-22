@@ -32,7 +32,7 @@ func TestLoginByPassword(t *testing.T) {
 	// POST参数
 	buffer := bytes.NewBufferString(`{
 		"username": "testpassword",
-		"password": "testpassword"
+		"password": "testpassWord123,"
 	}`)
 
 	// 模拟请求

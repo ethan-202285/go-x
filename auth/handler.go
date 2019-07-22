@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/go-chi/chi"
 )
 
 // newHandler 创建
@@ -103,4 +105,18 @@ func (h *Handler) HandleLogout(w http.ResponseWriter, r *http.Request) {
 	// 返回
 	respondJSON(w, "登出成功!", http.StatusOK)
 	return
+}
+
+// Mux 返回多路复用器
+func (h *Handler) Mux() http.Handler {
+	r := chi.NewRouter()
+
+	r.Route("/api/login", func(r chi.Router) {
+		r.Post("/", h.HandleLogin)
+
+		authenticated := h.auth.Middleware.AuthenticatedWithUser
+		r.With(authenticated).Delete("/", h.HandleLogout)
+	})
+
+	return r
 }

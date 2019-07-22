@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
+	"unicode"
 
 	"github.com/jinzhu/gorm"
 	"golang.org/x/crypto/bcrypt"
@@ -95,22 +96,22 @@ func (p *PasswordProvider) passwordHash(password string) string {
 }
 
 // Register 注册用户
-func (p *PasswordProvider) Register(username, password string, userID ...uint64) (user *User, err error) {
-	// 如果指定用户
-	if len(userID) == 1 {
-		user, err = p.repository().Find(userID[0])
+func (p *PasswordProvider) Register(username, password string, bindUserID ...uint64) (user *User, err error) {
+	if len(bindUserID) == 1 {
+		// 如果指定用户
+		user, err = p.repository().Find(bindUserID[0])
+	} else {
+		// 创建用户
+		user, err = p.repository().Create(username, username)
 	}
-	if err != nil {
-		return nil, err
-	}
-
-	// 创建用户
-	user, err = p.repository().Create(username, username)
 	if err != nil {
 		return nil, err
 	}
 
 	// 创建密码
+	if !isValid(password) {
+		return nil, errors.New("密码长度须大于8位，包含大小写，特殊字符、数字")
+	}
 	passwordHash := p.passwordHash(password)
 	data := struct {
 		PasswordHash string `json:"password_hash"`
@@ -122,4 +123,55 @@ func (p *PasswordProvider) Register(username, password string, userID ...uint64)
 		return nil, err
 	}
 	return
+}
+
+// SetPassword 重设密码
+func (p *PasswordProvider) SetPassword(username, password string) (err error) {
+	// 找到用户
+	identity, err := p.repository().FindIdentity(p.Name(), username)
+	if err != nil {
+		return err
+	}
+
+	// 创建密码
+	if !isValid(password) {
+		return errors.New("密码长度须大于8位，包含大小写，特殊字符、数字")
+	}
+	passwordHash := p.passwordHash(password)
+	data := struct {
+		PasswordHash string `json:"password_hash"`
+	}{
+		PasswordHash: passwordHash,
+	}
+
+	// 设置密码
+	p.repository().UpdateIdentityData(identity, data)
+	return nil
+}
+
+// https://stackoverflow.com/a/56139457
+func isValid(s string) bool {
+	var (
+		hasMinLen  = false
+		hasUpper   = false
+		hasLower   = false
+		hasNumber  = false
+		hasSpecial = false
+	)
+	if len(s) > 7 {
+		hasMinLen = true
+	}
+	for _, char := range s {
+		switch {
+		case unicode.IsUpper(char):
+			hasUpper = true
+		case unicode.IsLower(char):
+			hasLower = true
+		case unicode.IsNumber(char):
+			hasNumber = true
+		case unicode.IsPunct(char) || unicode.IsSymbol(char):
+			hasSpecial = true
+		}
+	}
+	return hasMinLen && hasUpper && hasLower && hasNumber && hasSpecial
 }

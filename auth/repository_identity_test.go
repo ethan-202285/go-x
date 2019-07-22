@@ -15,7 +15,7 @@ func init() {
 
 func TestIdentityCreate(t *testing.T) {
 	// 创建
-	userID, provider, openID := user.ID, "test", "goodwong"
+	userID, provider, openID := user.ID, "test", "test_user"
 	data := map[string]string{
 		"password": "123456",
 		"爱好":       "打球",
@@ -38,7 +38,7 @@ func TestIdentityUpdate(t *testing.T) {
 }
 
 func TestIdentityFind(t *testing.T) {
-	provider, openID := "test", "goodwong"
+	provider, openID := "test", "test_user"
 	identity, err = repository.FindIdentity(provider, openID)
 	if err != nil {
 		t.Fatal(err)

@@ -18,7 +18,7 @@ func init() {
 	auth.db().Delete(&User{}, "username IN (?)", []string{"testpassword"})
 	auth.db().Delete(&UserIdentity{}, "open_id IN (?)", []string{"testpassword"})
 	auth.db().Unscoped().Delete(&Token{}, "device IN (?)", []string{"test", "gotest"})
-	username, password := "testpassword", "testpassword"
+	username, password := "testpassword", "testpassWord123,"
 	var err error
 	loginUser, err = passwordProvider.Register(username, password)
 	if err != nil {
@@ -27,7 +27,7 @@ func init() {
 }
 
 func TestLogin(t *testing.T) {
-	credentials := []byte(`{"username":"testpassword", "password":"testpassword"}`)
+	credentials := []byte(`{"username":"testpassword", "password":"testpassWord123,"}`)
 	tokens, err := auth.Service.Login("password", credentials, true, "gotest")
 	if err != nil {
 		t.Fatal(err)

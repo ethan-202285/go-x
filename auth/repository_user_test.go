@@ -11,20 +11,20 @@ var (
 
 func init() {
 	// 准备
-	auth.db().Delete(&User{}, "username IN (?)", []string{"goodwong", "new_username", "test"})
+	auth.db().Delete(&User{}, "username IN (?)", []string{"test_user", "new_username", "test"})
 	user, err = repository.Create("test", "测试号")
 }
 
 func TestUserCreate(t *testing.T) {
 
 	// 创建
-	user, err = repository.Create("goodwong", "老小王")
+	user, err = repository.Create("test_user", "老小王")
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Log(user)
 	// 重复创建
-	user, err = repository.Create("goodwong", "老小王")
+	user, err = repository.Create("test_user", "老小王")
 	if err == nil {
 		t.Logf("错误的保存user: % v\n", user)
 		t.Fatal("重复用户名理应报错，却没有报")
@@ -54,12 +54,12 @@ func TestUserUpdate(t *testing.T) {
 		t.Fatal("更新Username失败")
 	}
 	// 更新已存在的username
-	err = repository.UpdateUserName(user, "goodwong")
+	err = repository.UpdateUserName(user, "test_user")
 	if err == nil {
 		t.Fatal("错误更新重复的Username")
 	}
 	//! todo @gorm bug
-	//!if user.Username == "goodwong" {
+	//!if user.Username == "test_user" {
 	//!	t.Error("错误更新重复的Username")
 	//!}
 }
@@ -73,7 +73,7 @@ func TestUserFind(t *testing.T) {
 	t.Logf("Find: % v\n", user)
 
 	// 按username
-	user, err = repository.FindByUsername("goodwong")
+	user, err = repository.FindByUsername("test_user")
 	if err != nil {
 		t.Fatal(err)
 	}
