@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-
-	"github.com/go-chi/chi"
+	"text/template"
 )
 
 // newHandler 创建
@@ -109,14 +108,25 @@ func (h *Handler) HandleLogout(w http.ResponseWriter, r *http.Request) {
 
 // Mux 返回多路复用器
 func (h *Handler) Mux() http.Handler {
-	r := chi.NewRouter()
-
-	r.Route("/api/login", func(r chi.Router) {
-		r.Post("/", h.HandleLogin)
-
-		authenticated := h.auth.Middleware.AuthenticatedWithUser
-		r.With(authenticated).Delete("/", h.HandleLogout)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "GET":
+			h.LoginDemoPage(w, r)
+		case "PATCH":
+			h.HandleRenew(w, r)
+		case "POST":
+			h.HandleLogin(w, r)
+		case "DELETE":
+			h.auth.Middleware.AuthenticatedWithUser(http.HandlerFunc(h.HandleLogout)).ServeHTTP(w, r)
+		default:
+			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		}
 	})
+}
 
-	return r
+// LoginDemoPage 登陆、续约、注销的示例页面
+func (h *Handler) LoginDemoPage(w http.ResponseWriter, r *http.Request) {
+	tpl := template.Must(template.ParseFiles("template/password_login.html"))
+	variables := map[string]string{}
+	tpl.Execute(w, variables)
 }
