@@ -85,8 +85,6 @@ func (r *Repository) List(offset, limit int, where ...interface{}) (users []*Use
 	switch len(where) {
 	case 0:
 		db = r.db()
-	case 1:
-		db = r.db().Where(where[0])
 	default:
 		db = r.db().Where(where[0], where[1:]...)
 	}

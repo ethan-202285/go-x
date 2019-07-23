@@ -83,7 +83,11 @@ func TestUserFind(t *testing.T) {
 func TestUserList(t *testing.T) {
 	offset := 0
 	limit := 10
-	users, err := repository.List(offset, limit, "id < ?", 10)
+	users, err := repository.List(offset, limit, "id < 10")
+	if err != nil {
+		t.Fatal(err)
+	}
+	users, err = repository.List(offset, limit, "id < ?", 10)
 	if err != nil {
 		t.Fatal(err)
 	}
