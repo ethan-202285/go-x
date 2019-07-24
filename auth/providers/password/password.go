@@ -1,4 +1,4 @@
-package auth
+package password
 
 import (
 	"bytes"
@@ -7,35 +7,46 @@ import (
 	"errors"
 	"unicode"
 
+	"github.com/goodwong/go-x/auth"
 	"github.com/jinzhu/gorm"
 	"golang.org/x/crypto/bcrypt"
 )
 
-// NewPasswordProvider 创建实例
+// NewProvider 创建实例
 // Usage:
 // ```go
-//   passwordProvider := NewPasswordProvider(auth)
-//   auth.Service.RegisterProvider(passwordProvider)
+//   provider := NewProvider(auth)
+//   auth.Service.RegisterProvider(provider)
 // ```
-func NewPasswordProvider(auth *Auth) *PasswordProvider {
-	return &PasswordProvider{auth: auth}
+func NewProvider(config *Config) *Provider {
+	return &Provider{
+		auth:      config.Auth,
+		secretKey: config.SecretKey,
+	}
 }
 
-// PasswordProvider 通过password 登陆
-type PasswordProvider struct {
-	auth *Auth
+// Config 配置
+type Config struct {
+	Auth      *auth.Auth
+	SecretKey []byte
 }
 
-func (p *PasswordProvider) repository() *Repository {
+// Provider 通过password 登陆
+type Provider struct {
+	auth      *auth.Auth
+	secretKey []byte
+}
+
+func (p *Provider) repository() *auth.Repository {
 	return p.auth.Repository
 }
 
 // Name 获取provider名字; implemented Name with LoginProvider interface
-func (p *PasswordProvider) Name() string {
+func (p *Provider) Name() string {
 	return "password"
 }
 
-func (p *PasswordProvider) passwordMatched(identity *UserIdentity, password string) bool {
+func (p *Provider) passwordMatched(identity *auth.UserIdentity, password string) bool {
 	data := struct {
 		PasswordHash string `json:"password_hash"`
 	}{}
@@ -45,14 +56,14 @@ func (p *PasswordProvider) passwordMatched(identity *UserIdentity, password stri
 	// 打包
 	buf := new(bytes.Buffer)
 	binary.Write(buf, binary.BigEndian, []byte(password))
-	binary.Write(buf, binary.BigEndian, p.auth.secretKey)
+	binary.Write(buf, binary.BigEndian, p.secretKey)
 
 	err := bcrypt.CompareHashAndPassword([]byte(data.PasswordHash), buf.Bytes())
 	return err == nil
 }
 
 // Login 登陆; implemented Login with LoginProvider interface
-func (p *PasswordProvider) Login(payload []byte) (user *User, err error) {
+func (p *Provider) Login(payload []byte) (user *auth.User, err error) {
 	// params
 	credentials := struct {
 		Username string `json:"username"`
@@ -81,11 +92,11 @@ func (p *PasswordProvider) Login(payload []byte) (user *User, err error) {
 }
 
 // PasswordHash 获取hash的密码
-func (p *PasswordProvider) passwordHash(password string) string {
+func (p *Provider) passwordHash(password string) string {
 	// 打包
 	buf := new(bytes.Buffer)
 	binary.Write(buf, binary.BigEndian, []byte(password))
-	binary.Write(buf, binary.BigEndian, p.auth.secretKey)
+	binary.Write(buf, binary.BigEndian, p.secretKey)
 	hash, err := bcrypt.GenerateFromPassword(buf.Bytes(), bcrypt.DefaultCost) // 50ms
 	if err != nil {
 		panic(err)
@@ -96,7 +107,7 @@ func (p *PasswordProvider) passwordHash(password string) string {
 }
 
 // Register 注册用户
-func (p *PasswordProvider) Register(username, password string, bindUserID ...uint64) (user *User, err error) {
+func (p *Provider) Register(username, password string, bindUserID ...uint64) (user *auth.User, err error) {
 	if len(bindUserID) == 1 {
 		// 如果指定用户
 		user, err = p.repository().Find(bindUserID[0])
@@ -126,7 +137,7 @@ func (p *PasswordProvider) Register(username, password string, bindUserID ...uin
 }
 
 // SetPassword 重设密码
-func (p *PasswordProvider) SetPassword(username, password string) (err error) {
+func (p *Provider) SetPassword(username, password string) (err error) {
 	// 找到用户
 	identity, err := p.repository().FindIdentity(p.Name(), username)
 	if err != nil {

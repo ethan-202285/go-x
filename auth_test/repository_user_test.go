@@ -1,17 +1,19 @@
-package auth
+package auth_test
 
 import (
 	"testing"
+
+	"github.com/goodwong/go-x/auth"
 )
 
 var (
-	user *User
+	user *auth.User
 	err  error
 )
 
 func init() {
 	// 准备
-	auth.db().Delete(&User{}, "username IN (?)", []string{"test_user", "new_username", "test"})
+	db.Delete(&auth.User{}, "username IN (?)", []string{"test_user", "new_username", "test"})
 	user, err = repository.Create("test", "测试号")
 }
 
@@ -38,7 +40,7 @@ func TestUserCreate(t *testing.T) {
 
 func TestUserUpdate(t *testing.T) {
 	// 更新
-	err = repository.Update(user, User{Username: "bad_username", Name: "小威廉"})
+	err = repository.Update(user, auth.User{Username: "bad_username", Name: "小威廉"})
 	if err != nil {
 		t.Fatal(err)
 	}

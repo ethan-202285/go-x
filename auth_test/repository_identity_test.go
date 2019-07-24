@@ -1,16 +1,18 @@
-package auth
+package auth_test
 
 import (
 	"testing"
+
+	"github.com/goodwong/go-x/auth"
 )
 
 var (
-	identity *UserIdentity
+	identity *auth.UserIdentity
 )
 
 func init() {
 	// 准备
-	auth.db().Delete(&UserIdentity{}, "provider IN (?)", []string{"test"})
+	db.Delete(&auth.UserIdentity{}, "provider IN (?)", []string{"test"})
 }
 
 func TestIdentityCreate(t *testing.T) {
@@ -34,7 +36,7 @@ func TestIdentityCreate(t *testing.T) {
 
 func TestIdentityUpdate(t *testing.T) {
 	repository.UpdateIdentityData(identity, nil)
-	repository.UpdateIdentityUser(identity, &User{ID: 1})
+	repository.UpdateIdentityUser(identity, &auth.User{ID: 1})
 }
 
 func TestIdentityFind(t *testing.T) {

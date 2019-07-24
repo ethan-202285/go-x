@@ -13,7 +13,9 @@ auth 模块
 -------------
 * 实例化
     ```go
-    import "./pkg/auth"
+    import (
+        "github.com/goodwong/go-x/auth"
+    )
 
     dsn := fmt.Sprintf("host=db port=5432 user=app dbname=app password=app sslmode=disable")
     db, err := gorm.Open("postgres", dsn)
@@ -26,8 +28,15 @@ auth 模块
 
 * 添加密码登陆方式
     ```go
-    passwords := auth.NewPasswordProvider(auths)
-    auths.RegisterProvider(passwords)
+    import (
+        "github.com/goodwong/go-x/auth/providers/password"
+    )
+
+	passwords := password.NewProvider(&password.Config{
+		Auth:      auths,
+		SecretKey: secretKey,
+	})
+	auths.RegisterProvider(passwords)
 
     // passwords 可能用于创建密码
     if _, err := passwords.Register(username, password, userIDs...); err != nil {

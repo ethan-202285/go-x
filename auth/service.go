@@ -8,9 +8,12 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
-// DefaultTokenLife 默认JWT token有效时长
-var DefaultTokenLife = 1 * time.Hour // 1 Hour
-var cleanupInterval = 10 * time.Second
+var (
+	// DefaultTokenLife 默认JWT token有效时长
+	DefaultTokenLife = 1 * time.Hour // 1 Hour
+	// CleanupInterval 清理登出间隔
+	CleanupInterval = 10 * time.Second
+)
 
 func newService(auth *Auth) *Service {
 	service := &Service{auth: auth, providers: map[string]LoginProvider{}}
@@ -175,7 +178,7 @@ func (s *Service) cleanupLogoutsLoop() {
 			})
 
 			// 间隔
-			time.Sleep(cleanupInterval)
+			time.Sleep(CleanupInterval)
 		}
 	}()
 }

@@ -1,4 +1,4 @@
-package auth
+package auth_test
 
 import (
 	"bytes"
@@ -9,16 +9,18 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/goodwong/go-x/auth"
 )
 
 var (
-	testHandlerTokens *TokenResponse
+	testHandlerTokens *auth.TokenResponse
 )
 
 func TestLoginMissParams(t *testing.T) {
 	req := httptest.NewRequest("GET", "http://localhost/api/login", nil)
 	w := httptest.NewRecorder()
-	auth.Handler.HandleLogin(w, req)
+	auths.Handler.HandleLogin(w, req)
 
 	resp := w.Result()
 	body, _ := ioutil.ReadAll(resp.Body)
@@ -38,7 +40,7 @@ func TestLoginByPassword(t *testing.T) {
 	// 模拟请求
 	req := httptest.NewRequest("POST", "http://localhost/api/login?provider=password&remember=1&device=gotest", buffer)
 	w := httptest.NewRecorder()
-	auth.Handler.HandleLogin(w, req)
+	auths.Handler.HandleLogin(w, req)
 
 	// 测试结果
 	resp := w.Result()
@@ -53,7 +55,7 @@ func TestLoginByPassword(t *testing.T) {
 	}
 
 	// 解析结果，后面要用
-	tokens := &TokenResponse{}
+	tokens := &auth.TokenResponse{}
 	err := json.Unmarshal(body, tokens)
 	if err != nil {
 		t.Fatal(err)
@@ -68,7 +70,7 @@ func TestRenew(t *testing.T) {
 	// 模拟请求
 	req := httptest.NewRequest("POST", "http://localhost/api/login?provider=password", buffer)
 	w := httptest.NewRecorder()
-	auth.Handler.HandleRenew(w, req)
+	auths.Handler.HandleRenew(w, req)
 
 	// 测试结果
 	resp := w.Result()
@@ -87,7 +89,7 @@ func TestLogout(t *testing.T) {
 	// 模拟请求
 	req := httptest.NewRequest("DELETE", "http://localhost/api/login", nil)
 	w := httptest.NewRecorder()
-	auth.Handler.HandleLogout(w, req)
+	auths.Handler.HandleLogout(w, req)
 
 	// 测试结果
 	resp := w.Result()
@@ -106,8 +108,8 @@ func TestLogout2(t *testing.T) {
 	req := httptest.NewRequest("DELETE", url, nil)
 	w := httptest.NewRecorder()
 	// 加上middleware
-	handlerFunc := http.HandlerFunc(auth.Handler.HandleLogout)
-	handler := auth.Middleware.AuthenticatedWithUser(handlerFunc)
+	handlerFunc := http.HandlerFunc(auths.Handler.HandleLogout)
+	handler := auths.Middleware.AuthenticatedWithUser(handlerFunc)
 	handler.ServeHTTP(w, req)
 
 	// 测试结果

@@ -1,13 +1,15 @@
-package auth
+package auth_test
 
 import (
 	"net/http/httptest"
 	"testing"
+
+	"github.com/goodwong/go-x/auth"
 )
 
 func TestContextRepository(t *testing.T) {
 	req := httptest.NewRequest("GET", "http://localhost/api/login", nil)
-	context := auth.NewContext(req)
+	context := auths.NewContext(req)
 	// 测试 WithUserID
 	context.WithUserID(125)
 	if userID := context.UserID(); userID != 125 {
@@ -15,7 +17,7 @@ func TestContextRepository(t *testing.T) {
 	}
 
 	// 测试 WithUser
-	context.WithUser(&User{ID: 15})
+	context.WithUser(&auth.User{ID: 15})
 	user := context.User()
 	if user == nil {
 		t.Fatal("context.User() 获取user失败")
