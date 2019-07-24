@@ -133,22 +133,28 @@ func (s *Service) Logout(user *User, device string) (err error) {
 	return s.repository().DeleteToken(user.ID, device)
 }
 
-// Validate 检查是否jwt是否提前失效（指用户主动登出）
-func (s *Service) Validate(token *jwt.Token) bool {
+// JwtInvalid 检查是否jwt是否提前失效（指用户主动登出）
+func (s *Service) JwtInvalid(token *jwt.Token) bool {
 	claims := token.Claims.(jwt.MapClaims)
 	userID := uint64(claims["sub"].(float64))
 	issuedAt := int64(claims["iat"].(float64))
 
 	// 查询
+	// 如果没在logouts里面找到，
+	// 说明用户没有主动注销行为，jwt可以继续使用
 	v, ok := s.logouts.Load(userID)
 	if !ok {
 		return false
 	}
+
 	// 比较
+	// 如果是注销前颁发的jwt，则失效，需要重新登录
 	logout := v.(*logoutStruct)
 	if issuedAt <= logout.LogoutAt.UTC().Unix() {
 		return true
 	}
+
+	// 注销后颁发的jwt，可以继续使用那个
 	return false
 }
 

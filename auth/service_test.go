@@ -69,13 +69,13 @@ func TestLogin(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if needRelogin := auth.Service.Validate(jwtToken); needRelogin {
+	if needRelogin := auth.Service.JwtInvalid(jwtToken); needRelogin {
 		t.Fatal("不需要重新登录")
 	}
 	if err := auth.Service.Logout(loginUser, "gotest"); err != nil {
 		t.Fatal(err)
 	}
-	if needRelogin := auth.Service.Validate(jwtToken); !needRelogin {
+	if needRelogin := auth.Service.JwtInvalid(jwtToken); !needRelogin {
 		t.Fatal("理应需要重新登录")
 	}
 }

@@ -23,7 +23,7 @@ func (m *Middleware) Authenticated(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			token, _, err := jwtauth.FromContext(r.Context())
 			// jwt_token有效，直接过！
-			if err == nil && token != nil && token.Valid {
+			if err == nil && token != nil && token.Valid && m.auth.Service.JwtInvalid(token) == false {
 				// 带上userID继续
 				claims := token.Claims.(jwt.MapClaims)
 				userID := uint64(claims["sub"].(float64))
