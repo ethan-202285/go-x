@@ -29,7 +29,7 @@ func init() {
 	if config.AppKey == "" {
 		log.Fatal("读取配置失败")
 	}
-	dd = NewDingtalk(&config)
+	dd = New(&config)
 }
 
 func Test_GetAccessToken(t *testing.T) {

@@ -7,8 +7,8 @@ import (
 	"sync"
 )
 
-// NewDingtalk 创建
-func NewDingtalk(cfg *Config) *Dingtalk {
+// New 创建
+func New(cfg *Config) *Dingtalk {
 	return &Dingtalk{
 		config: cfg,
 		mu:     &sync.RWMutex{},
