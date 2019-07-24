@@ -8,6 +8,7 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres" // postgres
 )
 
+// go get -u github.com/kevinburke/go-bindata/...
 //go:generate $GOPATH/bin/go-bindata -pkg=auth template/...
 
 // New 返回Auth类
