@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"../crypto"
+	"github.com/goodwong/go-x/crypto"
 
 	"golang.org/x/crypto/bcrypt"
 )
