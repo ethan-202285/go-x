@@ -54,3 +54,16 @@ func (auth *Auth) db() *gorm.DB {
 func (auth *Auth) NewContext(req *http.Request) *ContextRepository {
 	return newContextRepository(req)
 }
+
+// RegisterProvider 注册登陆方式
+func (auth *Auth) RegisterProvider(provider LoginProvider) {
+	name := provider.Name()
+	auth.Service.providers[name] = provider
+	return
+}
+
+// LoginProvider 登陆方法
+type LoginProvider interface {
+	Name() string
+	Login(credentials []byte) (user *User, err error)
+}

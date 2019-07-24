@@ -27,7 +27,7 @@ auth 模块
 * 添加密码登陆方式
     ```go
     passwords := auth.NewPasswordProvider(auths)
-    auths.Service.RegisterProvider(passwords)
+    auths.RegisterProvider(passwords)
 
     // passwords 可能用于创建密码
     if _, err := passwords.Register(username, password, userIDs...); err != nil {
@@ -156,5 +156,5 @@ auth 模块
     }
 
     // 2. 注册登陆方式
-    auths.Service.RegisterProvider(passwords)
+    auths.RegisterProvider(passwords)
     ```

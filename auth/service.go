@@ -18,12 +18,6 @@ func newService(auth *Auth) *Service {
 	return service
 }
 
-// LoginProvider 登陆方法
-type LoginProvider interface {
-	Name() string
-	Login(credentials []byte) (user *User, err error)
-}
-
 // Service Auth 服务
 type Service struct {
 	auth      *Auth
@@ -156,13 +150,6 @@ func (s *Service) JwtInvalid(token *jwt.Token) bool {
 
 	// 注销后颁发的jwt，可以继续使用那个
 	return false
-}
-
-// RegisterProvider 注册登陆方式
-func (s *Service) RegisterProvider(provider LoginProvider) {
-	name := provider.Name()
-	s.providers[name] = provider
-	return
 }
 
 // logoutStruct 主动注销行为（数据量较小，可内存保存）

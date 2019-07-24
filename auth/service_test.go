@@ -12,7 +12,7 @@ var (
 func init() {
 	// 注册password登陆
 	passwordProvider := NewPasswordProvider(auth)
-	auth.Service.RegisterProvider(passwordProvider)
+	auth.RegisterProvider(passwordProvider)
 
 	// 准备数据
 	auth.db().Delete(&User{}, "username IN (?)", []string{"testpassword"})
