@@ -5,13 +5,14 @@ import (
 	"net/http"
 )
 
-func newContextRepository(req *http.Request) *ContextRepository {
-	return &ContextRepository{request: req}
+// NewContext 新建context装饰类
+func NewContext(ctx context.Context) *ContextRepository {
+	return &ContextRepository{context: ctx}
 }
 
 // ContextRepository 类
 type ContextRepository struct {
-	request *http.Request
+	context context.Context
 }
 
 // UserID 在context里获取UserID
@@ -25,7 +26,7 @@ func (r *ContextRepository) UserID() uint64 {
 
 // User 在context里获取User
 func (r *ContextRepository) User() *User {
-	value := r.request.Context().Value(contextKeyUser)
+	value := r.context.Value(contextKeyUser)
 	user, ok := value.(*User)
 	if !ok {
 		return nil
@@ -39,24 +40,20 @@ func (r *ContextRepository) WithUserID(userID uint64) *ContextRepository {
 	user := r.User()
 	if user == nil || user.ID != userID {
 		user := &User{ID: userID}
-		ctx := r.request.Context()
-		ctx = context.WithValue(ctx, contextKeyUser, user)
-		r.request = r.request.WithContext(ctx)
+		r.context = context.WithValue(r.context, contextKeyUser, user)
 	}
 	return r
 }
 
 // WithUser 在context里带上User
 func (r *ContextRepository) WithUser(user *User) *ContextRepository {
-	ctx := r.request.Context()
-	ctx = context.WithValue(ctx, contextKeyUser, user)
-	r.request = r.request.WithContext(ctx)
+	r.context = context.WithValue(r.context, contextKeyUser, user)
 	return r
 }
 
-// Request 返回 Request
-func (r *ContextRepository) Request() *http.Request {
-	return r.request
+// AttachRequest 返回 Request
+func (r *ContextRepository) AttachRequest(req *http.Request) *http.Request {
+	return req.WithContext(r.context)
 }
 
 var (

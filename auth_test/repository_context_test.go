@@ -9,23 +9,23 @@ import (
 
 func TestContextRepository(t *testing.T) {
 	req := httptest.NewRequest("GET", "http://localhost/api/login", nil)
-	context := auths.NewContext(req)
+	ctx := auth.NewContext(req.Context())
 	// 测试 WithUserID
-	context.WithUserID(125)
-	if userID := context.UserID(); userID != 125 {
-		t.Fatal("context.UserID() 获取userID失败")
+	ctx.WithUserID(125)
+	if userID := ctx.UserID(); userID != 125 {
+		t.Fatal("ctx.UserID() 获取userID失败")
 	}
 
 	// 测试 WithUser
-	context.WithUser(&auth.User{ID: 15})
-	user := context.User()
+	ctx.WithUser(&auth.User{ID: 15})
+	user := ctx.User()
 	if user == nil {
-		t.Fatal("context.User() 获取user失败")
+		t.Fatal("ctx.User() 获取user失败")
 	}
-	t.Logf("user from context: %+v\n", user)
+	t.Logf("user from ctx: %+v\n", user)
 
 	user.Name = "老小王"
-	user2 := context.User() // 模拟数据库
-	t.Logf("user from context: %+v\n", user2)
+	user2 := ctx.User() // 模拟数据库
+	t.Logf("user from ctx: %+v\n", user2)
 
 }

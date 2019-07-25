@@ -1,8 +1,6 @@
 package auth
 
 import (
-	"net/http"
-
 	"github.com/go-chi/jwtauth"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres" // postgres
@@ -48,9 +46,4 @@ func (auth *Auth) db() *gorm.DB {
 		panic("Auth 缺少有效的*gorm.DB对象")
 	}
 	return auth.gormDB
-}
-
-// NewContext 返回 ContextRepository
-func (auth *Auth) NewContext(req *http.Request) *ContextRepository {
-	return newContextRepository(req)
 }

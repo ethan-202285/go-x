@@ -74,35 +74,35 @@ auth 模块
 -------------
 * 从request.Contex()获取用户ID
     ```go
-    context := auths.NewContext(req)
+    ctx := auth.NewContext(req.Context())
     // 设置用户ID
-    context.WithUserID(125)
+    ctx.WithUserID(125)
     
     // 获取
-    userID := context.UserID()
+    userID := ctx.UserID()
     if userID == 0 {
         log.Fatal("invalid userID")
     }
-	user := context.User() // return &User{ID:125}
+	user := ctx.User() // return &User{ID:125}
 	if user == nil {
 		log.Fatal("invalid user")
 	}
     
     // 设置用户
-    context.WithUser(&User{ID: 15})
+    ctx.WithUser(&User{ID: 15})
     
     // 用在middleware中传递下去
     func (m *Middleware) Authenticated(next http.Handler) http.Handler {
         attach := func(next http.Handler) http.Handler {
             return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-                context := auths.NewContext(r)
+                ctx := auth.NewContext(r.Context())
 
                 // load
-                user, _ := auths.Repository.Find(context.UserID())
-                context.WithUser(user)
+                user, _ := auths.Repository.Find(ctx.UserID())
+                ctx.WithUser(user)
 
                 // 传递下去
-                next.ServeHTTP(w, context.Request())
+                next.ServeHTTP(w, ctx.AttachRequest(r))
             })
         }
 	    return attach(next)

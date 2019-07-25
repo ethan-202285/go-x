@@ -86,7 +86,7 @@ func (h *Handler) HandleRenew(w http.ResponseWriter, r *http.Request) {
 
 // HandleLogout 登出
 func (h *Handler) HandleLogout(w http.ResponseWriter, r *http.Request) {
-	userID := h.auth.NewContext(r).UserID()
+	userID := NewContext(r.Context()).UserID()
 	if userID == 0 {
 		respondJSON(w, "无需登出!", http.StatusOK)
 		return

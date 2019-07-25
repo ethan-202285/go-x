@@ -27,8 +27,8 @@ func (m *Middleware) Authenticated(next http.Handler) http.Handler {
 				// 带上userID继续
 				claims := token.Claims.(jwt.MapClaims)
 				userID := uint64(claims["sub"].(float64))
-				context := m.auth.NewContext(r).WithUserID(userID)
-				next.ServeHTTP(w, context.Request())
+				ctx := NewContext(r.Context()).WithUserID(userID)
+				next.ServeHTTP(w, ctx.AttachRequest(r))
 				return
 			}
 
@@ -57,8 +57,8 @@ func (m *Middleware) Authenticated(next http.Handler) http.Handler {
 			setCookie(w, "jwt", tokens.Token, tokens.TokenExpires)
 
 			// 带上userID继续
-			context := m.auth.NewContext(r).WithUser(user)
-			next.ServeHTTP(w, context.Request())
+			ctx := NewContext(r.Context()).WithUser(user)
+			next.ServeHTTP(w, ctx.AttachRequest(r))
 		})
 	}
 	return jwtauth.Verifier(m.auth.jwtauth)(check(next))
@@ -68,18 +68,18 @@ func (m *Middleware) Authenticated(next http.Handler) http.Handler {
 func (m *Middleware) AuthenticatedWithUser(next http.Handler) http.Handler {
 	attach := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			context := m.auth.NewContext(r)
+			ctx := NewContext(r.Context())
 
 			// load
-			user, err := m.auth.Repository.Find(context.UserID())
+			user, err := m.auth.Repository.Find(ctx.UserID())
 			if err != nil {
 				respondJSON(w, map[string]string{"error": err.Error()}, http.StatusBadRequest)
 				return
 			}
 
 			// attach
-			context.WithUser(user)
-			next.ServeHTTP(w, context.Request())
+			ctx.WithUser(user)
+			next.ServeHTTP(w, ctx.AttachRequest(r))
 		})
 	}
 	return m.Authenticated(attach(next))
