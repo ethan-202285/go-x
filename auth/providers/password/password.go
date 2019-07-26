@@ -12,12 +12,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// NewProvider 创建实例
-// Usage:
-// ```go
-//   provider := NewProvider(auth)
-//   auth.Service.RegisterProvider(provider)
-// ```
+// NewProvider 创建
 func NewProvider(config *Config) *Provider {
 	return &Provider{
 		auth:      config.Auth,
