@@ -109,8 +109,9 @@ func TestLogout2(t *testing.T) {
 	w := httptest.NewRecorder()
 	// 加上middleware
 	handlerFunc := http.HandlerFunc(auths.Handler.HandleLogout)
-	handler := auths.Middleware.AuthenticatedWithUser(handlerFunc)
-	handler.ServeHTTP(w, req)
+	parseToken := auths.Middleware.ParseToken
+	authenticatedWithUser := auths.Middleware.AuthenticatedWithUser
+	parseToken(authenticatedWithUser(handlerFunc)).ServeHTTP(w, req)
 
 	// 测试结果
 	resp := w.Result()

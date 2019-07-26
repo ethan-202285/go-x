@@ -57,13 +57,18 @@ auth 模块
     r.Route("/api/login", func(r chi.Router) {
         // Login Demo Page
         r.Get("/", auths.Handler.LoginDemoPage)
+        
         // Login
         r.Post("/", auths.Handler.HandleLogin)
+
         // Renew
         r.Patch("/", auths.Handler.HandleRenew)
+
         // Logout
+        parseToken := auths.Middleware.ParseToken
         authenticated := auths.Middleware.AuthenticatedWithUser
-        r.With(authenticated).Delete("/", auths.Handler.HandleLogout)
+        r.With(parseToken, authenticated).
+            Delete("/", auths.Handler.HandleLogout)
     })
     ```
 
@@ -92,7 +97,7 @@ auth 模块
     ctx.WithUser(&User{ID: 15})
     
     // 用在middleware中传递下去
-    func (m *Middleware) Authenticated(next http.Handler) http.Handler {
+    func (m *Middleware) AuthenticatedWithUser(next http.Handler) http.Handler {
         attach := func(next http.Handler) http.Handler {
             return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
                 ctx := auth.NewContext(r.Context())
@@ -111,17 +116,22 @@ auth 模块
 
 * 中间件
     ```go
-    // 确保用户已登录，并在context里设置userID
+    // 解析token
     // 鉴权方式：
     //   1. jwt
     //   2. cookie中的refresh_token
     r := chi.NewRouter()
-    authenticated := auths.Middleware.Authenticated
-    logout := auths.Handler.HandleLogout
-    r.With(authenticated).Delete("/", logout)
+    r.Use(auths.Middleware.ParseToken)
 
-    // 在前面的基础上，每次还会从数据库中拉取user信息
-    auths.Middleware.AuthenticatedWithUser
+    // 确保用户已登录，并在context里设置userID
+    r.
+        With(auths.Middleware.Authenticated).
+        Delete("/", auths.Handler.HandleLogout)
+
+    // 在Authenticated的基础上，
+    // 每次还会从数据库中拉取user信息
+    // 并附着在r.Context()里面
+    r.Use(auths.Middleware.AuthenticatedWithUser)
     ```
 
 高级
