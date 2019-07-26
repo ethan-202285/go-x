@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"text/template"
+
+	"github.com/goodwong/go-x/auth/templates"
 )
 
 // newHandler 创建
@@ -127,7 +129,7 @@ func (h *Handler) Mux() http.Handler {
 // LoginDemoPage 登陆、续约、注销的示例页面
 func (h *Handler) LoginDemoPage(w http.ResponseWriter, r *http.Request) {
 	// tpl := template.Must(template.ParseFiles("template/password_login.html"))
-	html := MustAsset("template/password_login.html")
+	html := templates.MustAsset("password_login.html")
 	tpl := template.Must(template.New("password_login.html").Parse(string(html)))
 	variables := map[string]string{}
 	tpl.Execute(w, variables)
