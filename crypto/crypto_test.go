@@ -49,7 +49,7 @@ func TestCBC(t *testing.T) {
 
 func Run(t *testing.T, name string, cryptor Cryptor, plain []byte) {
 	encrypted := cryptor.Encrypt(plain)
-	encodeb64 := base64.URLEncoding.EncodeToString(encrypted)
+	encodeb64 := base64.RawURLEncoding.EncodeToString(encrypted)
 	decrypted, err := cryptor.Decrypt(encrypted)
 	if err != nil {
 		panic(err)

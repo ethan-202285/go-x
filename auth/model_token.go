@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"io"
-	"strings"
 	"time"
 
 	"github.com/goodwong/go-x/crypto"
@@ -53,8 +52,7 @@ func newToken(params Token, secretKey []byte) *Token {
 
 func parseTokenString(tokenString string, secretKey []byte) (t *Token, err error) {
 	// base64 解码
-	tokenString += strings.Repeat("=", (4-len(tokenString)%4)%4)
-	data, err := base64.URLEncoding.DecodeString(tokenString)
+	data, err := base64.RawURLEncoding.DecodeString(tokenString)
 	if err != nil {
 		return nil, ErrInvalidToken
 	}
@@ -184,6 +182,5 @@ func (t *Token) TokenString() string {
 	encrypted := crypto.NewNaCL(t.secretKey).Encrypt(buf.Bytes())
 
 	// base64编码
-	base64encoded := base64.URLEncoding.EncodeToString(encrypted)
-	return strings.TrimRight(base64encoded, "=")
+	return base64.RawURLEncoding.EncodeToString(encrypted)
 }
