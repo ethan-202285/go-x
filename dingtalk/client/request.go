@@ -203,7 +203,7 @@ func checkResult(status int, contentType string, readBytes []byte) (responseErro
 		// 不解析内容
 	case strings.Contains(contentType, "application/json"):
 		fallthrough
-	case strings.Contains(contentType, "plain/text"):
+	case strings.Contains(contentType, "text/plain"):
 		// json解码
 		err = json.Unmarshal(readBytes, &result)
 		if err != nil {
