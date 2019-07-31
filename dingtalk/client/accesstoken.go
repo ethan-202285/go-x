@@ -1,4 +1,4 @@
-package dingtalk
+package client
 
 import (
 	"encoding/json"
@@ -6,15 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"strings"
 	"time"
-)
-
-var (
-	// AccessTokenFunc 刷新access_token的方法，
-	// 默认直接从钉钉接口获取；
-	// 也可以从Redis获取（中控服务器会统一管理access_token）
-	AccessTokenFunc = defaultAccessTokenFunc
 )
 
 type accessTokenStruct struct {
@@ -23,9 +15,8 @@ type accessTokenStruct struct {
 }
 
 // defaultAccessTokenFunc 默认的获取access_token的具体方法
-func defaultAccessTokenFunc(cfg *Config) (accessToken *accessTokenStruct, err error) {
-	r := strings.NewReplacer("KEY", cfg.AppKey, "SECRET", cfg.AppSecret)
-	api := r.Replace("https://oapi.dingtalk.com/gettoken?appkey=KEY&appsecret=SECRET")
+func (client *APIClient) defaultAccessTokenFunc() (accessToken *accessTokenStruct, err error) {
+	api := client.tokenAPI
 
 	retryFn := func() (result interface{}, retry bool, err error) {
 		// 网络原因，重试！
@@ -77,33 +68,33 @@ func defaultAccessTokenFunc(cfg *Config) (accessToken *accessTokenStruct, err er
 }
 
 // GetAccessToken 获取access_token（可能是缓存）
-func (dd *Dingtalk) GetAccessToken() (tokenString string, err error) {
-	dd.mu.Lock()
-	defer dd.mu.Unlock()
+func (client *APIClient) GetAccessToken() (tokenString string, err error) {
+	client.mu.Lock()
+	defer client.mu.Unlock()
 
-	accessToken := dd.accessToken
+	accessToken := client.accessToken
 	if accessToken != nil && accessToken.ExpiredAt.After(time.Now()) {
 		return accessToken.Token, nil
 	}
-	return dd.fetchToken()
+	return client.fetchToken()
 }
 
 // RefreshAccessToken 强制从服务器刷新access_token
-func (dd *Dingtalk) RefreshAccessToken() (tokenString string, err error) {
-	dd.mu.Lock()
-	defer dd.mu.Unlock()
+func (client *APIClient) RefreshAccessToken() (tokenString string, err error) {
+	client.mu.Lock()
+	defer client.mu.Unlock()
 
-	return dd.fetchToken()
+	return client.fetchToken()
 }
 
-func (dd *Dingtalk) fetchToken() (tokenString string, err error) {
-	accessToken, e := AccessTokenFunc(dd.config)
+func (client *APIClient) fetchToken() (tokenString string, err error) {
+	accessToken, e := client.tokenFunc()
 	// 失败
 	if e != nil {
 		return "", e
 	}
 	// 成功
-	dd.accessToken = accessToken // 如果出错，返回的是nil
+	client.accessToken = accessToken // 如果出错，返回的是nil
 	log.Println("获取AccessToken成功")
 	return accessToken.Token, nil
 }

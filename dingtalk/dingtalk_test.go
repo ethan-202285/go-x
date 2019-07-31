@@ -1,4 +1,4 @@
-package dingtalk
+package dingtalk_test
 
 import (
 	"log"
@@ -6,10 +6,12 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/goodwong/go-x/dingtalk"
 )
 
 var (
-	dd *Dingtalk
+	dd *dingtalk.Dingtalk
 )
 
 // 测试之前，请设置Env变量，命令行：
@@ -20,20 +22,24 @@ var (
 // CorpID= AgentID= AppKey= AppSecret= go test ./dingtalk
 func init() {
 	agentID, _ := strconv.ParseUint(os.Getenv("AgentID"), 10, 64)
-	config := Config{
+	config := dingtalk.Config{
 		CorpID:    os.Getenv("CorpID"),
 		AgentID:   agentID,
 		AppKey:    os.Getenv("AppKey"),
 		AppSecret: os.Getenv("AppSecret"),
 	}
 	if config.AppKey == "" {
-		log.Fatal("读取配置失败")
+		log.Fatal("\033[31m读取配置失败。请按以下步骤进行测试：\033[0m\n" +
+			"\t\033[33m1. 请在钉钉应用管理后台设置IP白名单.\n" +
+			"\t2. 设置测试参数并运行：\n" +
+			"\t\033[7mCorpID= AgentID= AppKey= AppSecret=\033[0m go test ./dingtalk",
+		)
 	}
-	dd = New(&config)
+	dd = dingtalk.New(&config)
 }
 
 func Test_GetAccessToken(t *testing.T) {
-	tokenString, err := dd.GetAccessToken()
+	tokenString, err := dd.Client.GetAccessToken()
 	if err != nil || len(tokenString) == 0 {
 		t.Fatal("GetAccessToken失败：", err)
 	}

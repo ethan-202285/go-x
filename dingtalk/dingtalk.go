@@ -4,14 +4,21 @@ import (
 	"encoding/json"
 	"log"
 	"strings"
-	"sync"
+
+	"github.com/goodwong/go-x/dingtalk/client"
 )
 
 // New 创建
 func New(cfg *Config) *Dingtalk {
+	r := strings.NewReplacer("KEY", cfg.AppKey, "SECRET", cfg.AppSecret)
+	tokenAPI := r.Replace("https://oapi.dingtalk.com/gettoken?appkey=KEY&appsecret=SECRET")
+
+	client := client.New(&client.Config{
+		TokenAPI: tokenAPI,
+	})
 	return &Dingtalk{
 		config: cfg,
-		mu:     &sync.RWMutex{},
+		Client: client,
 	}
 }
 
@@ -25,9 +32,8 @@ type Config struct {
 
 // Dingtalk 功能类
 type Dingtalk struct {
-	config      *Config
-	mu          *sync.RWMutex // guards accessToken
-	accessToken *accessTokenStruct
+	config *Config
+	Client *client.APIClient
 }
 
 // UserInfo 用户信息
@@ -38,7 +44,7 @@ func (dd *Dingtalk) UserInfo(userID string) (info *UserInfo, err error) {
 	url := "https://oapi.dingtalk.com/user/get?access_token=ACCESS_TOKEN&userid=USERID"
 	r := strings.NewReplacer("USERID", userID)
 
-	respBytes, err := dd.Get(r.Replace(url))
+	respBytes, err := dd.Client.Get(r.Replace(url))
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +62,7 @@ func (dd *Dingtalk) UserInfoByCode(code string) (info *UserInfo, err error) {
 	url := "https://oapi.dingtalk.com/user/getuserinfo?access_token=ACCESS_TOKEN&code=CODE"
 	r := strings.NewReplacer("CODE", code)
 
-	respBytes, err := dd.Get(r.Replace(url))
+	respBytes, err := dd.Client.Get(r.Replace(url))
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +80,7 @@ func (dd *Dingtalk) UserInfoByCode(code string) (info *UserInfo, err error) {
 func (dd *Dingtalk) SendWorkMessage(message map[string]interface{}) (taskID uint64, err error) {
 	message["agent_id"] = dd.config.AgentID
 	url := "https://oapi.dingtalk.com/topapi/message/corpconversation/asyncsend_v2?access_token=ACCESS_TOKEN"
-	respBytes, err := dd.PostJSON(url, message)
+	respBytes, err := dd.Client.PostJSON(url, message)
 	if err != nil {
 		return 0, err
 	}

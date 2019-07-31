@@ -1,4 +1,4 @@
-package dingtalk
+package client
 
 import (
 	"bytes"
@@ -11,19 +11,62 @@ import (
 	"mime/multipart"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 )
 
 const defaultHTTPClientTimeout = time.Duration(2 * time.Second)
 
+// New new
+// Usage 1，自定义获取token的函数：
+//	client.New(&client.Config{
+//		TokenFunc: getTokenFunc,
+//	})
+// Usage 2, 使用默认的token函数：
+//	client := client.New(&client.Config{
+//		TokenAPI: tokenAPI, // tokenAPI自己替换里面的APPKEY&APPSECRET等内容
+//	})
+func New(cfg *Config) *APIClient {
+	client := &APIClient{
+		HTTPClientTimeout: defaultHTTPClientTimeout,
+		mu:                &sync.RWMutex{},
+	}
+
+	if cfg.TokenFunc != nil {
+		client.tokenFunc = cfg.TokenFunc
+	} else if cfg.TokenAPI != "" {
+		client.tokenAPI = cfg.TokenAPI
+		client.tokenFunc = client.defaultAccessTokenFunc
+	} else {
+		panic("client.New() miss cfg.TokenFunc or cfg.TokenAPI")
+	}
+
+	return client
+}
+
+// APIClient 类型
+type APIClient struct {
+	HTTPClientTimeout time.Duration
+	mu                *sync.RWMutex
+	accessToken       *accessTokenStruct
+	tokenAPI          string
+	tokenFunc         func() (accessToken *accessTokenStruct, err error)
+}
+
+// Config config
+type Config struct {
+	TokenAPI  string
+	TokenFunc func() (accessToken *accessTokenStruct, err error)
+}
+
 // 封装的request
 // 做两件事：
 // 1. 自动替换ACCESS_TOKEN
 // 2. ACCESS_TOKEN过期自动重试
-func (dd *Dingtalk) request(method, url, contentType string, body io.Reader) (respBytes []byte, err error) {
+func (client *APIClient) request(method, url, contentType string, body io.Reader) (respBytes []byte, err error) {
 	retryFn := func() (result interface{}, retry bool, err error) {
 		// 替换access_token
-		token, err := dd.GetAccessToken()
+		token, err := client.GetAccessToken()
 		if err != nil {
 			// GetAccessToken 本身会遇忙重试
 			return nil, false, fmt.Errorf("获取AccessToken失败：%s", err)
@@ -31,14 +74,14 @@ func (dd *Dingtalk) request(method, url, contentType string, body io.Reader) (re
 		r := strings.NewReplacer("ACCESS_TOKEN", token)
 
 		// request
-		client := newHTTPClient()
+		httpClient := newHTTPClient()
 		req, err := http.NewRequest(method, r.Replace(url), body)
 		if err != nil {
 			return nil, true, err
 		}
 		req.Header.Set("Content-Type", contentType)
 		var resp *http.Response
-		resp, err = client.Do(req)
+		resp, err = httpClient.Do(req)
 		if err != nil {
 			return nil, true, fmt.Errorf("请求失败：%s", err)
 		}
@@ -61,7 +104,7 @@ func (dd *Dingtalk) request(method, url, contentType string, body io.Reader) (re
 			return nil, true, errors.New(errInfo.Errmsg) // 服务器忙
 		case 40001, 40014, 41001, 42001:
 			log.Println("access_token失效！", err)
-			if _, err = dd.RefreshAccessToken(); err != nil { // accessToken 失效，重新获取，并重试
+			if _, err = client.RefreshAccessToken(); err != nil { // accessToken 失效，重新获取，并重试
 				return nil, false, fmt.Errorf("刷新access_token失败：%s", err)
 			}
 			return nil, true, fmt.Errorf("access_token失效：%s", err)
@@ -83,22 +126,22 @@ func (dd *Dingtalk) request(method, url, contentType string, body io.Reader) (re
 }
 
 // Get 请求
-func (dd *Dingtalk) Get(url string) (respBytes []byte, err error) {
-	return dd.request("GET", url, "application/json", nil)
+func (client *APIClient) Get(url string) (respBytes []byte, err error) {
+	return client.request("GET", url, "application/json", nil)
 }
 
 // PostJSON 请求
-func (dd *Dingtalk) PostJSON(url string, data interface{}) (respBytes []byte, err error) {
+func (client *APIClient) PostJSON(url string, data interface{}) (respBytes []byte, err error) {
 	buffer := new(bytes.Buffer)
 	encoder := json.NewEncoder(buffer)
 	encoder.SetEscapeHTML(false) // 禁用转码
 	_ = encoder.Encode(data)
 
-	return dd.request("POST", url, "application/json", buffer)
+	return client.request("POST", url, "application/json", buffer)
 }
 
 // PostBlob 请求
-func (dd *Dingtalk) PostBlob(url, field string, blob []byte) (respBytes []byte, err error) {
+func (client *APIClient) PostBlob(url, field string, blob []byte) (respBytes []byte, err error) {
 	buffer := new(bytes.Buffer)
 	writer := multipart.NewWriter(buffer)
 	part, err := writer.CreateFormFile(field, "media.png")
@@ -111,7 +154,7 @@ func (dd *Dingtalk) PostBlob(url, field string, blob []byte) (respBytes []byte, 
 		return
 	}
 
-	return dd.request("POST", url, writer.FormDataContentType(), buffer)
+	return client.request("POST", url, writer.FormDataContentType(), buffer)
 }
 
 type retryFn func() (result interface{}, retry bool, err error)
