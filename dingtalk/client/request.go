@@ -80,11 +80,13 @@ func (client *APIClient) request(method, url, contentType string, body io.Reader
 			return nil, true, err
 		}
 		req.Header.Set("Content-Type", contentType)
+		// debug(httputil.DumpRequestOut(req, true)) // 打印请求、响应的原文格式，这功能老牛逼了
 		var resp *http.Response
 		resp, err = httpClient.Do(req)
 		if err != nil {
 			return nil, true, fmt.Errorf("请求失败：%s", err)
 		}
+		// debug(httputil.DumpResponse(resp, true)) // 打印请求、响应的原文格式，这功能老牛逼了
 
 		// response
 		respBytes, err = ioutil.ReadAll(resp.Body)
@@ -194,7 +196,14 @@ type responseErrorInfo struct {
 func checkResult(status int, contentType string, readBytes []byte) (responseErrorInfo, error) {
 	var err error
 	var result responseErrorInfo
-	if strings.Contains(contentType, "application/json") {
+
+	switch {
+	case strings.HasPrefix(contentType, "image/"):
+		// 文件媒体类型
+		// 不解析内容
+	case strings.Contains(contentType, "application/json"):
+		fallthrough
+	case strings.Contains(contentType, "plain/text"):
 		// json解码
 		err = json.Unmarshal(readBytes, &result)
 		if err != nil {
@@ -205,9 +214,18 @@ func checkResult(status int, contentType string, readBytes []byte) (responseErro
 			return result, errors.New(result.Errmsg)
 		}
 	}
+
 	// 检查status code
 	if (status < 200 || status >= 300) && err == nil {
 		err = fmt.Errorf("http状态码错误：%d", status)
 	}
 	return result, err
+}
+
+func debug(data []byte, err error) {
+	if err == nil {
+		fmt.Printf("%s\n\n", data)
+	} else {
+		log.Fatalf("%s\n\n", err)
+	}
 }
