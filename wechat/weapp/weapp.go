@@ -17,6 +17,7 @@ func New(cfg *Config) *Weapp {
 		TokenAPI: tokenAPI,
 	})
 	return &Weapp{
+		AppID:  cfg.AppID,
 		config: cfg,
 		Client: client,
 	}
@@ -30,6 +31,7 @@ type Config struct {
 
 // Weapp 功能类
 type Weapp struct {
+	AppID  string
 	config *Config
 	Client *client.APIClient
 }
@@ -42,7 +44,7 @@ type UserSession struct {
 }
 
 // Code2session 根据免登授权码获取用户信息
-func (weapp *Weapp) Code2session(code string) (info *UserSession, err error) {
+func (weapp *Weapp) Code2session(code string) (*UserSession, error) {
 	url := "https://api.weixin.qq.com/sns/jscode2session?appid=APPID&secret=SECRET&js_code=JSCODE&grant_type=authorization_code"
 	r := strings.NewReplacer(
 		"APPID", weapp.config.AppID,
