@@ -41,7 +41,7 @@ func (client *APIClient) defaultAccessTokenFunc() (accessToken *accessTokenStruc
 
 		// 其它错误，返回
 		if err != nil {
-			return nil, false, fmt.Errorf("钉钉返回错误：%s", err)
+			return nil, false, fmt.Errorf("API返回错误：%s", err)
 		}
 
 		// 解析
