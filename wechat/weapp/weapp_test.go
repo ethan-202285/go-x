@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	wechatWepp *weapp.Weapp
+	wechatWeapp *weapp.Weapp
 	code       string
 )
 
@@ -36,11 +36,11 @@ func init() {
 			"\t\033[7mcode= \033[0;33m go test ./wechat/weapp\033[0m",
 		)
 	}
-	wechatWepp = weapp.New(&config)
+	wechatWeapp = weapp.New(&config)
 }
 
 func Test_GetAccessToken(t *testing.T) {
-	tokenString, err := wechatWepp.Client.GetAccessToken()
+	tokenString, err := wechatWeapp.Client.GetAccessToken()
 	if err != nil || len(tokenString) == 0 {
 		t.Fatal("GetAccessToken失败：", err)
 	}
@@ -51,7 +51,7 @@ func TestCode2session(t *testing.T) {
 	if code == "" {
 		return
 	}
-	result, err := wechatWepp.Code2session(code)
+	result, err := wechatWeapp.Code2session(code)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,7 +59,7 @@ func TestCode2session(t *testing.T) {
 }
 
 func TestUnlimitedWacode(t *testing.T) {
-	// respBytes, err := wechatWepp.UnlimitedWacode("pages/gift/index/main", "gift=123")
+	// respBytes, err := wechatWeapp.UnlimitedWacode("pages/gift/index/main", "gift=123")
 	// if err != nil {
 	// 	t.Logf("生成小程序码需要已经发布的页面，测试号无法测试")
 	// 	t.Fatal(err)

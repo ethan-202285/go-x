@@ -65,6 +65,19 @@ func (weapp *Weapp) Code2session(code string) (*UserSession, error) {
 }
 
 // UnlimitedWacode 获取无限制小程序码
+// Usage:
+// ```go
+// 	respBytes, err := wechatWeapp.UnlimitedWacode("pages/gift/index/main", "gift=123")
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	output, err := os.Create("create_unlimited_wxcode_output.png")
+// 	if err != nil {
+// 		log.Fatal("创建output文件失败：", err)
+// 	}
+// 	defer output.Close()
+// 	output.Write(respBytes)
+// ```
 func (weapp *Weapp) UnlimitedWacode(page, scene string, widths ...int) (respBytes []byte, err error) {
 	url := "https://api.weixin.qq.com/wxa/getwxacodeunlimit?access_token=ACCESS_TOKEN"
 	params := map[string]interface{}{
