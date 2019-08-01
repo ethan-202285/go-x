@@ -114,7 +114,7 @@ func (h *Handler) Mux() http.Handler {
 		switch r.Method {
 		case "GET":
 			h.LoginDemoPage(w, r)
-		case "PATCH":
+		case "PUT":
 			h.HandleRenew(w, r)
 		case "POST":
 			h.HandleLogin(w, r)
