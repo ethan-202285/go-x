@@ -112,14 +112,24 @@ func (h *Handler) HandleLogout(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) Mux() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
-		case "GET":
-			h.LoginDemoPage(w, r)
+
+		//case "GET":
+		//// 出于安全考虑，默认不启用登陆演示页面
+		//// 若需要启用，请自行添加，如：
+		//// r.Get("/api/login", auths.Handler.LoginDemoPage)
+		//	h.LoginDemoPage(w, r)
+
 		case "PUT":
 			h.HandleRenew(w, r)
+
 		case "POST":
 			h.HandleLogin(w, r)
+
 		case "DELETE":
-			h.auth.Middleware.AuthenticatedWithUser(http.HandlerFunc(h.HandleLogout)).ServeHTTP(w, r)
+			// 这里ParseToken 可能会和 application层面的ParseToken重复，但是关系不大
+			// 至少保证不能漏
+			h.auth.Middleware.ParseToken(http.HandlerFunc(h.HandleLogout)).ServeHTTP(w, r)
+
 		default:
 			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 		}
@@ -128,6 +138,27 @@ func (h *Handler) Mux() http.Handler {
 
 // LoginDemoPage 登陆、续约、注销的示例页面
 func (h *Handler) LoginDemoPage(w http.ResponseWriter, r *http.Request) {
+	// 查询数据
+	// *应用开发不应该使用这个接口
+	// *而应该专门设计返回用户信息的接口，如用GraphQL
+	if r.URL.Query().Get("mode") == "data" {
+		user := NewContext(r.Context()).User()
+
+		// 已登陆
+		if user != nil {
+			respondJSON(w, map[string]interface{}{
+				"id":   user.ID,
+				"name": user.Name,
+			}, http.StatusOK)
+			return
+		}
+
+		// 未登录
+		respondJSON(w, nil, http.StatusOK)
+		return
+	}
+
+	// 显示页面
 	// tpl := template.Must(template.ParseFiles("template/password_login.html"))
 	html := templates.MustAsset("password_login.html")
 	tpl := template.Must(template.New("password_login.html").Parse(string(html)))
