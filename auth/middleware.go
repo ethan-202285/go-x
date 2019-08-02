@@ -76,21 +76,18 @@ func (m *Middleware) ParseToken(next http.Handler) http.Handler {
 
 // Authenticated 验证已登陆
 func (m *Middleware) Authenticated(next http.Handler) http.Handler {
-	check := func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := NewContext(r.Context())
-			if ctx.UserID() == 0 {
-				respondJSON(
-					w,
-					map[string]string{"error": http.StatusText(http.StatusUnauthorized)},
-					http.StatusUnauthorized,
-				)
-				return
-			}
-			next.ServeHTTP(w, r)
-		})
-	}
-	return check(next)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := NewContext(r.Context())
+		if ctx.UserID() == 0 {
+			respondJSON(
+				w,
+				map[string]string{"error": http.StatusText(http.StatusUnauthorized)},
+				http.StatusUnauthorized,
+			)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 // AuthenticatedWithUser 验证已登录且自动附上User对象

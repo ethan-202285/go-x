@@ -100,6 +100,27 @@ func TestLogout(t *testing.T) {
 	}
 }
 
+// 测试中间件拦截是否成功
+func TestAuthenticatedMiddleware(t *testing.T) {
+	// 模拟请求
+	// 加上jwt令牌
+	url := fmt.Sprintf("http://localhost/api/login?jwt=%s", testHandlerTokens.Token)
+	req := httptest.NewRequest("DELETE", url, nil)
+	w := httptest.NewRecorder()
+
+	// 加上middleware
+	// 没有parseToken，期望行为是401拦截掉
+	handlerFunc := http.HandlerFunc(auths.Handler.HandleLogout)
+	authenticated := auths.Middleware.Authenticated
+	authenticated(handlerFunc).ServeHTTP(w, req)
+
+	// 测试结果
+	resp := w.Result()
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Errorf("没有parseToken，理应是401的，当前响应：%d", resp.StatusCode)
+	}
+}
+
 // 测试登录态时候的登出行为
 func TestLogout2(t *testing.T) {
 	// 模拟请求
@@ -107,11 +128,12 @@ func TestLogout2(t *testing.T) {
 	url := fmt.Sprintf("http://localhost/api/login?jwt=%s", testHandlerTokens.Token)
 	req := httptest.NewRequest("DELETE", url, nil)
 	w := httptest.NewRecorder()
+
 	// 加上middleware
 	handlerFunc := http.HandlerFunc(auths.Handler.HandleLogout)
 	parseToken := auths.Middleware.ParseToken
-	authenticatedWithUser := auths.Middleware.AuthenticatedWithUser
-	parseToken(authenticatedWithUser(handlerFunc)).ServeHTTP(w, req)
+	authenticated := auths.Middleware.Authenticated
+	parseToken(authenticated(handlerFunc)).ServeHTTP(w, req)
 
 	// 测试结果
 	resp := w.Result()
