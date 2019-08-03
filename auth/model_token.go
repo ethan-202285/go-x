@@ -122,7 +122,7 @@ func (t *Token) sign() string {
 	//binary.Write(buf, binary.BigEndian, t.UserID)
 	//binary.Write(buf, binary.BigEndian, []byte(t.Device))
 	//binary.Write(buf, binary.BigEndian, uint64(t.IssuedAt.UTC().Unix()))
-	binary.Write(buf, binary.BigEndian, t.secretKey)
+	//binary.Write(buf, binary.BigEndian, t.secretKey)
 
 	// 其实这里用sha1完全可以
 	// 因为不是用户密码，字典攻击无效，穷举费时
@@ -154,7 +154,7 @@ func (t *Token) Verify() bool {
 	// 打包
 	buf := new(bytes.Buffer)
 	binary.Write(buf, binary.BigEndian, t.nonce)
-	binary.Write(buf, binary.BigEndian, t.secretKey)
+	//binary.Write(buf, binary.BigEndian, t.secretKey)
 
 	err := bcrypt.CompareHashAndPassword([]byte(t.Hash), buf.Bytes())
 	return err == nil

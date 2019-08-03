@@ -15,21 +15,18 @@ import (
 // NewProvider 创建
 func NewProvider(config *Config) *Provider {
 	return &Provider{
-		auth:      config.Auth,
-		secretKey: config.SecretKey,
+		auth: config.Auth,
 	}
 }
 
 // Config 配置
 type Config struct {
-	Auth      *auth.Auth
-	SecretKey []byte
+	Auth *auth.Auth
 }
 
 // Provider 通过password 登陆
 type Provider struct {
-	auth      *auth.Auth
-	secretKey []byte
+	auth *auth.Auth
 }
 
 func (p *Provider) repository() *auth.Repository {
@@ -51,7 +48,6 @@ func (p *Provider) passwordMatched(identity *auth.UserIdentity, password string)
 	// 打包
 	buf := new(bytes.Buffer)
 	binary.Write(buf, binary.BigEndian, []byte(password))
-	binary.Write(buf, binary.BigEndian, p.secretKey)
 
 	err := bcrypt.CompareHashAndPassword([]byte(data.PasswordHash), buf.Bytes())
 	return err == nil
@@ -91,7 +87,6 @@ func (p *Provider) passwordHash(password string) string {
 	// 打包
 	buf := new(bytes.Buffer)
 	binary.Write(buf, binary.BigEndian, []byte(password))
-	binary.Write(buf, binary.BigEndian, p.secretKey)
 	hash, err := bcrypt.GenerateFromPassword(buf.Bytes(), bcrypt.DefaultCost) // 50ms
 	if err != nil {
 		panic(err)
