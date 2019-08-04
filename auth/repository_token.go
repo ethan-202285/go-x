@@ -13,7 +13,7 @@ func (r *Repository) FindToken(tokenString string) (token *Token, err error) {
 	if err != nil {
 		return nil, ErrInvalidToken
 	}
-	if r.db().Where(Token{ID: token.ID}).Take(&token).RecordNotFound() {
+	if r.db().Where("id = ?", token.ID).Take(&token).RecordNotFound() {
 		return nil, ErrInvalidToken
 	}
 

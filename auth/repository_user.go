@@ -8,8 +8,8 @@ import (
 
 // Find 根据id查找
 func (r *Repository) Find(id uint64) (user *User, err error) {
-	user = &User{ID: id}
-	err = r.db().Take(user).Error
+	user = &User{}
+	err = r.db().Where("id = ?", id).Take(user).Error
 	if err != nil {
 		return nil, err
 	}
