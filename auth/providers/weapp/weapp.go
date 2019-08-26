@@ -2,7 +2,6 @@ package weapp
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/goodwong/go-x/auth"
 	"github.com/goodwong/go-x/wechat/weapp"
@@ -47,51 +46,47 @@ func (p *Provider) Login(payload []byte) (user *auth.User, err error) {
 	if err := json.Unmarshal(payload, &credentials); err != nil {
 		return nil, err
 	}
-
 	// 接口获取数据
 	session, err := p.weapp.Code2session(credentials.Code)
 	if err != nil {
 		return nil, err
 	}
 
+	openID := session.OpenID + "@" + p.weapp.AppID
+	unionID := ""
+	if session.UnionID != "" {
+		unionID = session.UnionID
+	}
+
 	// 如果用户存在，直接返回
-	// by openid
-	user, err = p.repository().FindByOpenID(p.Name(), session.OpenID)
+	// SELECT * FROM "user_identities" WHERE (provider = 'wechat_weapp' and open_id = 'oPy_U5****Q6y7so@wx70****f05') LIMIT 1
+	user, err = p.repository().FindByOpenID(p.Name(), openID)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
 	}
 	if user != nil {
 		return user, nil
-	}
-	// by unionid
-	user, err = p.repository().FindByOpenID(p.Name(), session.UnionID)
-	if err != nil && err != gorm.ErrRecordNotFound {
-		return nil, err
-	}
-	if user != nil {
-		return user, nil
-	}
-	// by username
-	var username string
-	if session.UnionID != "" {
-		username = session.UnionID + "@wechat_unionID"
-	} else {
-		username = session.OpenID + "@" + p.Name()
-	}
-	if session.UnionID != "" {
-		user, _ = p.repository().FindByUsername(username)
-		if user != nil {
-			return user, nil
-		}
 	}
 
 	// 创建用户
-	user, err = p.repository().Create(username, "")
-	if err != nil {
-		return nil, err
+	// 优先以unionID 创建用户
+	var username string
+	if unionID != "" {
+		username = unionID + "@" + "wechat_unionID"
+	} else {
+		username = openID + "@" + p.Name()
 	}
-	// 然后创建登陆凭证，并关联至这个手机号码用户
-	_, err = p.repository().CreateIdentity(user.ID, p.Name(), fmt.Sprintf("%s@%s", session.OpenID, p.weapp.AppID))
+	// 如果用户已存在，直接关联该用户
+	user, _ = p.repository().FindByUsername(username)
+	if user == nil {
+		// 否则就要创建用户
+		user, err = p.repository().Create(username, "")
+		if err != nil {
+			return nil, err
+		}
+	}
+	// 然后创建登陆凭证
+	_, err = p.repository().CreateIdentity(user.ID, p.Name(), openID)
 	if err != nil {
 		return nil, err
 	}
