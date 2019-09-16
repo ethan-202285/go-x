@@ -15,7 +15,7 @@ import (
 
 var (
 	wechatWeapp *weapp.Weapp
-	code       string
+	code        string
 )
 
 // 测试之前，请设置Env变量，命令行：
@@ -26,8 +26,8 @@ var (
 // AppID= AppSecret= go test ./weapp
 func init() {
 	config := weapp.Config{
-		AppID:     "wxc55bbe4cc2995ac5",
-		AppSecret: "b493bea4a184cb7a1d783f5c73b499b0",
+		AppID:     os.Getenv("AppID"),
+		AppSecret: os.Getenv("AppSecret"),
 	}
 	code = os.Getenv("code")
 	if code == "" {
