@@ -65,17 +65,20 @@ type Config struct {
 // 2. ACCESS_TOKEN过期自动重试
 func (client *APIClient) request(method, url, contentType string, body io.Reader) (respBytes []byte, err error) {
 	retryFn := func() (result interface{}, retry bool, err error) {
-		// 替换access_token
-		token, err := client.GetAccessToken()
-		if err != nil {
-			// GetAccessToken 本身会遇忙重试
-			return nil, false, fmt.Errorf("获取AccessToken失败：%s", err)
+		if strings.Contains(url, "ACCESS_TOKEN") {
+			// 替换access_token
+			token, err := client.GetAccessToken()
+			if err != nil {
+				// GetAccessToken 本身会遇忙重试
+				return nil, false, fmt.Errorf("获取AccessToken失败：%s", err)
+			}
+			r := strings.NewReplacer("ACCESS_TOKEN", token)
+			url = r.Replace(url)
 		}
-		r := strings.NewReplacer("ACCESS_TOKEN", token)
 
 		// request
 		httpClient := newHTTPClient()
-		req, err := http.NewRequest(method, r.Replace(url), body)
+		req, err := http.NewRequest(method, url, body)
 		if err != nil {
 			return nil, true, err
 		}
