@@ -78,7 +78,7 @@ func (p *Provider) Login(payload []byte) (user *auth.User, err error) {
 		}
 	}
 	// 然后创建登陆凭证，并关联至这个手机号码用户
-	_, err = p.repository().CreateIdentity(user.ID, p.Name(), info.UserID, info)
+	_, err = p.repository().CreateIdentity(user.ID, providerName, info.UserID, info)
 	if err != nil {
 		return nil, err
 	}
