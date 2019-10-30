@@ -3,6 +3,7 @@ package dingtalk
 import (
 	"encoding/json"
 	"log"
+	"strconv"
 	"strings"
 
 	"github.com/goodwong/go-x/dingtalk/client"
@@ -112,4 +113,60 @@ func (dd *Dingtalk) SendText(receiver map[string]interface{}, content string) (t
 		data["to_all_user"] = true
 	}
 	return dd.SendWorkMessage(data)
+}
+
+// GetDepartment 获取部门详情
+func (dd *Dingtalk) GetDepartment(deptOpenID int) (*Department, error) {
+	url := "https://oapi.dingtalk.com/department/get?access_token=ACCESS_TOKEN&id=DEPARTMENT_ID"
+	r := strings.NewReplacer("DEPARTMENT_ID", strconv.Itoa(deptOpenID))
+
+	respBytes, err := dd.Client.Get(r.Replace(url))
+	if err != nil {
+		return nil, err
+	}
+	var result Department
+	err = json.Unmarshal(respBytes, &result)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// ListDepartment 列出所有子部门
+func (dd *Dingtalk) ListDepartment(parentOpenID int) ([]*Department, error) {
+	url := "https://oapi.dingtalk.com/department/list?access_token=ACCESS_TOKEN&fetch_child=true&id=PARENT_ID"
+	r := strings.NewReplacer("PARENT_ID", strconv.Itoa(parentOpenID))
+
+	respBytes, err := dd.Client.Get(r.Replace(url))
+	if err != nil {
+		return nil, err
+	}
+	var result struct {
+		Department []*Department `json:"department"`
+	}
+	err = json.Unmarshal(respBytes, &result)
+	if err != nil {
+		log.Printf("钉钉返回：%s\n", respBytes)
+		return nil, err
+	}
+	return result.Department, nil
+}
+
+// ListUserInDepartment 列出部门下用户详情
+func (dd *Dingtalk) ListUserInDepartment(deptOpenID int) ([]*UserInfo, error) {
+	url := "https://oapi.dingtalk.com/user/listbypage?access_token=ACCESS_TOKEN&department_id=DEPARTMENT_ID&offset=0&size=100"
+	r := strings.NewReplacer("DEPARTMENT_ID", strconv.Itoa(deptOpenID))
+
+	respBytes, err := dd.Client.Get(r.Replace(url))
+	if err != nil {
+		return nil, err
+	}
+	var result struct {
+		Userlist []*UserInfo `json:"userlist"`
+	}
+	err = json.Unmarshal(respBytes, &result)
+	if err != nil {
+		return nil, err
+	}
+	return result.Userlist, nil
 }
