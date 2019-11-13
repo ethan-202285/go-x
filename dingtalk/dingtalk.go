@@ -1,8 +1,6 @@
 package dingtalk
 
 import (
-	"encoding/json"
-	"log"
 	"strconv"
 	"strings"
 
@@ -45,14 +43,9 @@ func (dd *Dingtalk) UserInfo(userID string) (info *UserInfo, err error) {
 	url := "https://oapi.dingtalk.com/user/get?access_token=ACCESS_TOKEN&userid=USERID"
 	r := strings.NewReplacer("USERID", userID)
 
-	respBytes, err := dd.Client.Get(r.Replace(url))
-	if err != nil {
-		return nil, err
-	}
 	info = &UserInfo{}
-	err = json.Unmarshal(respBytes, &info)
+	err = dd.Client.Get(r.Replace(url), info)
 	if err != nil {
-		log.Println("json.Unmarshal失败，钉钉个人信息jsonString：", string(respBytes))
 		return nil, err
 	}
 	return
@@ -63,14 +56,10 @@ func (dd *Dingtalk) UserInfoByCode(code string) (info *UserInfo, err error) {
 	url := "https://oapi.dingtalk.com/user/getuserinfo?access_token=ACCESS_TOKEN&code=CODE"
 	r := strings.NewReplacer("CODE", code)
 
-	respBytes, err := dd.Client.Get(r.Replace(url))
-	if err != nil {
-		return nil, err
-	}
 	var result struct {
 		UserID string `json:"userid"`
 	}
-	err = json.Unmarshal(respBytes, &result)
+	err = dd.Client.Get(r.Replace(url), &result)
 	if err != nil {
 		return nil, err
 	}
@@ -81,14 +70,10 @@ func (dd *Dingtalk) UserInfoByCode(code string) (info *UserInfo, err error) {
 func (dd *Dingtalk) SendWorkMessage(message map[string]interface{}) (taskID uint64, err error) {
 	message["agent_id"] = dd.config.AgentID
 	url := "https://oapi.dingtalk.com/topapi/message/corpconversation/asyncsend_v2?access_token=ACCESS_TOKEN"
-	respBytes, err := dd.Client.PostJSON(url, message)
-	if err != nil {
-		return 0, err
-	}
 	var result struct {
 		TaskID uint64 `json:"task_id"`
 	}
-	err = json.Unmarshal(respBytes, &result)
+	err = dd.Client.PostJSON(url, message, &result)
 	if err != nil {
 		return 0, err
 	}
@@ -120,12 +105,8 @@ func (dd *Dingtalk) GetDepartment(deptOpenID int) (*Department, error) {
 	url := "https://oapi.dingtalk.com/department/get?access_token=ACCESS_TOKEN&id=DEPARTMENT_ID"
 	r := strings.NewReplacer("DEPARTMENT_ID", strconv.Itoa(deptOpenID))
 
-	respBytes, err := dd.Client.Get(r.Replace(url))
-	if err != nil {
-		return nil, err
-	}
 	var result Department
-	err = json.Unmarshal(respBytes, &result)
+	err := dd.Client.Get(r.Replace(url), &result)
 	if err != nil {
 		return nil, err
 	}
@@ -137,16 +118,11 @@ func (dd *Dingtalk) ListDepartment(parentOpenID int) ([]*Department, error) {
 	url := "https://oapi.dingtalk.com/department/list?access_token=ACCESS_TOKEN&fetch_child=true&id=PARENT_ID"
 	r := strings.NewReplacer("PARENT_ID", strconv.Itoa(parentOpenID))
 
-	respBytes, err := dd.Client.Get(r.Replace(url))
-	if err != nil {
-		return nil, err
-	}
 	var result struct {
 		Department []*Department `json:"department"`
 	}
-	err = json.Unmarshal(respBytes, &result)
+	err := dd.Client.Get(r.Replace(url), &result)
 	if err != nil {
-		log.Printf("钉钉返回：%s\n", respBytes)
 		return nil, err
 	}
 	return result.Department, nil
@@ -157,14 +133,10 @@ func (dd *Dingtalk) ListUserInDepartment(deptOpenID int) ([]*UserInfo, error) {
 	url := "https://oapi.dingtalk.com/user/listbypage?access_token=ACCESS_TOKEN&department_id=DEPARTMENT_ID&offset=0&size=100"
 	r := strings.NewReplacer("DEPARTMENT_ID", strconv.Itoa(deptOpenID))
 
-	respBytes, err := dd.Client.Get(r.Replace(url))
-	if err != nil {
-		return nil, err
-	}
 	var result struct {
 		Userlist []*UserInfo `json:"userlist"`
 	}
-	err = json.Unmarshal(respBytes, &result)
+	err := dd.Client.Get(r.Replace(url), &result)
 	if err != nil {
 		return nil, err
 	}

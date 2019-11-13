@@ -1,7 +1,6 @@
 package weapp
 
 import (
-	"encoding/json"
 	"strings"
 
 	"github.com/goodwong/go-x/dingtalk/client"
@@ -52,12 +51,8 @@ func (weapp *Weapp) Code2session(code string) (*UserSession, error) {
 		"JSCODE", code,
 	)
 
-	respBytes, err := weapp.Client.Get(r.Replace(url))
-	if err != nil {
-		return nil, err
-	}
 	var result UserSession
-	err = json.Unmarshal(respBytes, &result)
+	err := weapp.Client.Get(r.Replace(url), &result)
 	if err != nil {
 		return nil, err
 	}
@@ -88,5 +83,6 @@ func (weapp *Weapp) UnlimitedWacode(page, scene string, widths ...int) (respByte
 	if len(widths) > 0 {
 		params["width"] = widths[0]
 	}
-	return weapp.Client.PostJSON(url, params)
+	err = weapp.Client.PostJSON(url, params, &respBytes)
+	return
 }

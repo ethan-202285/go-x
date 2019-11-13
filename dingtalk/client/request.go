@@ -63,7 +63,7 @@ type Config struct {
 // 做两件事：
 // 1. 自动替换ACCESS_TOKEN
 // 2. ACCESS_TOKEN过期自动重试
-func (client *APIClient) request(method, url, contentType string, body io.Reader) (respBytes []byte, err error) {
+func (client *APIClient) request(method, url, contentType string, body io.Reader, result interface{}) error {
 	retryFn := func() (result interface{}, retry bool, err error) {
 		if strings.Contains(url, "ACCESS_TOKEN") {
 			// 替换access_token
@@ -92,7 +92,7 @@ func (client *APIClient) request(method, url, contentType string, body io.Reader
 		// debug(httputil.DumpResponse(resp, true)) // 打印请求、响应的原文格式，这功能老牛逼了
 
 		// response
-		respBytes, err = ioutil.ReadAll(resp.Body)
+		respBytes, err := ioutil.ReadAll(resp.Body)
 		resp.Body.Close()
 		if err != nil {
 			return nil, true, fmt.Errorf("读取失败：%s", err)
@@ -122,44 +122,58 @@ func (client *APIClient) request(method, url, contentType string, body io.Reader
 		// 正常：返回
 		return respBytes, false, nil
 	}
-	result, err := retry(retryFn, 3) // 重试3次
+
+	resp, err := retry(retryFn, 3) // 重试3次
 	if err != nil {
-		return nil, err
+		return err
 	}
-	respBytes, _ = result.([]byte)
-	return respBytes, nil
+	respBytes, _ := resp.([]byte)
+
+	// 解析
+	switch v := result.(type) {
+	case nil:
+		// do nothing
+	case *[]byte:
+		*v = respBytes
+	default:
+		err = json.Unmarshal(respBytes, v)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Get 请求
-func (client *APIClient) Get(url string) (respBytes []byte, err error) {
-	return client.request("GET", url, "application/json", nil)
+func (client *APIClient) Get(url string, result interface{}) error {
+	return client.request("GET", url, "application/json", nil, result)
 }
 
 // PostJSON 请求
-func (client *APIClient) PostJSON(url string, data interface{}) (respBytes []byte, err error) {
+func (client *APIClient) PostJSON(url string, payload interface{}, result interface{}) error {
 	buffer := new(bytes.Buffer)
 	encoder := json.NewEncoder(buffer)
 	encoder.SetEscapeHTML(false) // 禁用转码
-	_ = encoder.Encode(data)
+	_ = encoder.Encode(payload)
 
-	return client.request("POST", url, "application/json", buffer)
+	return client.request("POST", url, "application/json", buffer, result)
 }
 
 // PostBlob 请求
-func (client *APIClient) PostBlob(url, field string, blob []byte) (respBytes []byte, err error) {
+func (client *APIClient) PostBlob(url, field string, blob []byte, result interface{}) error {
 	buffer := new(bytes.Buffer)
 	writer := multipart.NewWriter(buffer)
 	part, err := writer.CreateFormFile(field, "media.png")
 	if err != nil {
-		return
+		return err
 	}
 	part.Write(blob)
 	err = writer.Close()
 	if err != nil {
-		return
+		return err
 	}
 
-	return client.request("POST", url, writer.FormDataContentType(), buffer)
+	return client.request("POST", url, writer.FormDataContentType(), buffer, result)
 }
 
 type retryFn func() (result interface{}, retry bool, err error)

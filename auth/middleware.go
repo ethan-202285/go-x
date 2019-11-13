@@ -44,9 +44,6 @@ func (m *Middleware) ParseToken(next http.Handler) http.Handler {
 			cookie, _ := r.Cookie("refresh_token")
 			if cookie == nil || cookie.Value == "" {
 				// 无效的refresh_token
-				deleteCookie(w, "jwt")
-				deleteCookie(w, "refresh_token")
-
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -55,9 +52,6 @@ func (m *Middleware) ParseToken(next http.Handler) http.Handler {
 			user, tokens, err := m.auth.Service.Renew(cookie.Value)
 			if err != nil {
 				// 续约失败
-				deleteCookie(w, "jwt")
-				deleteCookie(w, "refresh_token")
-
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -79,6 +73,8 @@ func (m *Middleware) Authenticated(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(r.Context())
 		if ctx.UserID() == 0 {
+			deleteCookie(w, "jwt")
+			deleteCookie(w, "refresh_token")
 			respondJSON(
 				w,
 				map[string]string{"error": http.StatusText(http.StatusUnauthorized)},
