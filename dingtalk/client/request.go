@@ -178,10 +178,10 @@ func (client *APIClient) PostBlob(url, field string, blob []byte, result interfa
 
 type retryFn func() (result interface{}, retry bool, err error)
 
-func retry(fn retryFn, retryTimes int) (result interface{}, err error) {
-	retry := 0
+func retry(fn retryFn, attempts int) (result interface{}, err error) {
 	for {
 		result, tryAgain, err := fn()
+		attempts--
 
 		// 成功
 		if err == nil {
@@ -189,8 +189,7 @@ func retry(fn retryFn, retryTimes int) (result interface{}, err error) {
 		}
 
 		// 失败，重试
-		if retry < retryTimes && tryAgain {
-			retry++
+		if attempts > 0 && tryAgain {
 			continue
 		}
 

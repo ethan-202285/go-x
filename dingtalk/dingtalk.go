@@ -142,3 +142,145 @@ func (dd *Dingtalk) ListUserInDepartment(deptOpenID int) ([]*UserInfo, error) {
 	}
 	return result.Userlist, nil
 }
+
+type createWorkflowInstance struct {
+	Request CreateWorkflowInstanceRequest `json:"request"`
+}
+
+// CreateWorkflowInstanceRequest 创建钉钉实例参数
+type CreateWorkflowInstanceRequest struct {
+	ProcessCode         string              `json:"process_code"`
+	OriginatorUserID    string              `json:"originator_user_id"`
+	Title               string              `json:"title"`
+	FormComponentValues []WorkflowComponent `json:"form_component_values"`
+	URL                 string              `json:"url"`
+}
+
+// WorkflowComponent 创建钉钉实例组件内容
+type WorkflowComponent struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+// CreateWorkflowInstance 创建工作流实例
+func (dd *Dingtalk) CreateWorkflowInstance(request CreateWorkflowInstanceRequest) (instanceID string, err error) {
+	url := "https://oapi.dingtalk.com/topapi/process/workrecord/create?access_token=ACCESS_TOKEN"
+
+	var payload = createWorkflowInstance{
+		Request: request,
+	}
+	var result struct {
+		Result struct {
+			ProcessInstanceID string `json:"process_instance_id"`
+		} `json:"result"`
+	}
+	err = dd.Client.PostJSON(url, payload, &result)
+	if err != nil {
+		return "", err
+	}
+	return result.Result.ProcessInstanceID, nil
+}
+
+// updateWorkflowInstance 更新钉钉实例参数
+type updateWorkflowInstance struct {
+	Request           UpdateWorkflowInstanceRequest `json:"request"`
+	CancelRunningTask bool                          `json:"cancel_running_task"`
+}
+
+// UpdateWorkflowInstanceRequest 更新钉钉实例参数
+type UpdateWorkflowInstanceRequest struct {
+	ProcessInstanceID string `json:"process_instance_id"`
+	Status            string `json:"status"`
+	Result            string `json:"result"`
+}
+
+const (
+	// WorkflowInstanceStatusCompleted 已完成
+	WorkflowInstanceStatusCompleted = "COMPLETED"
+	// WorkflowInstanceStatusTerminated 终止
+	WorkflowInstanceStatusTerminated = "TERMINATED"
+	// WorkflowInstanceResultAgree 同意
+	WorkflowInstanceResultAgree = "agree"
+	// WorkflowInstanceResultRefuse 拒绝
+	WorkflowInstanceResultRefuse = "refuse"
+)
+
+// UpdateWorkflowInstance 更新工作流实例
+func (dd *Dingtalk) UpdateWorkflowInstance(request UpdateWorkflowInstanceRequest, cancelRunningTask bool) error {
+	url := "https://oapi.dingtalk.com/topapi/process/workrecord/update?access_token=ACCESS_TOKEN"
+
+	var payload = updateWorkflowInstance{
+		Request:           request,
+		CancelRunningTask: cancelRunningTask,
+	}
+	return dd.Client.PostJSON(url, payload, nil)
+}
+
+type createWorkflowTask struct {
+	Request CreateWorkflowTaskRequest `json:"request"`
+}
+
+// CreateWorkflowTaskRequest 待办事项
+type CreateWorkflowTaskRequest struct {
+	AgentID           int                      `json:"agentid"`
+	ProcessInstanceID string                   `json:"process_instance_id"`
+	ActivityID        string                   `json:"activity_id"`
+	Tasks             []CreateWorkflowTaskNode `json:"tasks"`
+}
+
+// CreateWorkflowTaskNode 节点
+type CreateWorkflowTaskNode struct {
+	UserID string `json:"userid"`
+	URL    string `json:"url"`
+}
+
+// CreateWorkflowTaskResponseNode 节点
+type CreateWorkflowTaskResponseNode struct {
+	UserID string `json:"userid"`
+	TaskID int    `json:"task_id"`
+}
+
+// CreateWorkflowTask 创建钉钉待办事项
+func (dd *Dingtalk) CreateWorkflowTask(request CreateWorkflowTaskRequest) ([]CreateWorkflowTaskResponseNode, error) {
+	url := "https://oapi.dingtalk.com/topapi/process/workrecord/task/create?access_token=ACCESS_TOKEN"
+
+	var payload = createWorkflowTask{
+		Request: request,
+	}
+	var result struct {
+		Tasks []CreateWorkflowTaskResponseNode `json:"tasks"`
+	}
+	err := dd.Client.PostJSON(url, payload, &result)
+	if err != nil {
+		return nil, err
+	}
+	return result.Tasks, nil
+}
+
+type updateWorkflowTask struct {
+	Request UpdateWorkflowTaskRequest `json:"request"`
+}
+
+// UpdateWorkflowTaskRequest 待办事项
+type UpdateWorkflowTaskRequest struct {
+	AgentID           int                      `json:"agentid"`
+	ProcessInstanceID string                   `json:"process_instance_id"`
+	Tasks             []UpdateWorkflowTaskNode `json:"tasks"`
+}
+
+// UpdateWorkflowTaskNode 节点
+type UpdateWorkflowTaskNode struct {
+	TaskID int    `json:"task_id"`
+	Status string `json:"status"`
+	Result string `json:"result"`
+}
+
+// UpdateWorkflowTask 更新订单待办事项
+func (dd *Dingtalk) UpdateWorkflowTask(request UpdateWorkflowTaskRequest) error {
+	url := "https://oapi.dingtalk.com/topapi/process/workrecord/task/update?access_token=ACCESS_TOKEN"
+
+	var payload = updateWorkflowTask{
+		Request: request,
+	}
+	return dd.Client.PostJSON(url, payload, nil)
+}
